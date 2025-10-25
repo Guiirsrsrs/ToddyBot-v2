@@ -3,9 +3,9 @@ const crateExtension = {
     obj: {}
     
 };
-const API = require("../api.js");
+const API = require("../index");
 
-const Database = require('../manager/DatabaseManager');
+const Database = require("../../manager/DatabaseManager");
 const DatabaseManager = new Database();
 
 function shuffle(array) {

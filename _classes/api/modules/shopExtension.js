@@ -1,5 +1,5 @@
-const API = require("../api.js");
-const Database = require("../manager/DatabaseManager.js");
+const API = require("../index");
+const Database = require("../../manager/DatabaseManager");
 const DatabaseManager = new Database();
 
 const shopExtension = {
@@ -149,13 +149,39 @@ shopExtension.formatPages = async function(embed, { currentpage, totalpages }, p
       const butnList = []
       const components = []
 
-      butnList.push(API.createButton('backward', 'PRIMARY', '', '852241487064596540', (currentpage == 1 ? true : false)))
-      butnList.push(API.createButton('stop', 'SECONDARY', '', '🔴'))
-      butnList.push(API.createButton('forward', 'PRIMARY', '', '737370913204600853', (currentpage == totalpages ? true : false)))
+      // ATUALIZAÇÃO v14: API.createButton -> new API.ButtonBuilder()
+      butnList.push(
+          new API.ButtonBuilder()
+              .setCustomId('backward')
+              .setStyle(API.ButtonStyle.Primary)
+              .setEmoji('852241487064596540')
+              .setDisabled(currentpage == 1 ? true : false)
+      );
+      butnList.push(
+          new API.ButtonBuilder()
+              .setCustomId('stop')
+              .setStyle(API.ButtonStyle.Secondary)
+              .setEmoji('🔴')
+      );
+      butnList.push(
+          new API.ButtonBuilder()
+              .setCustomId('forward')
+              .setStyle(API.ButtonStyle.Primary)
+              .setEmoji('737370913204600853')
+              .setDisabled(currentpage == totalpages ? true : false)
+      );
 
       for (i = 0; i < productscurrentpage.length; i++) {
-         if (!productscurrentpage[i]) break
-         butnList.push(API.createButton(productscurrentpage[i].id.toString(), 'SECONDARY', productscurrentpage[i].id.toString(), productscurrentpage[i].icon.split(':')[2] ? productscurrentpage[i].icon.split(':')[2].replace('>', '') : productscurrentpage[i].icon, !productscurrentpage[i].buyable ? true : false))
+         if (!productscurrentpage[i]) break;
+         // ATUALIZAÇÃO v14: API.createButton -> new API.ButtonBuilder()
+         butnList.push(
+             new API.ButtonBuilder()
+                 .setCustomId(productscurrentpage[i].id.toString())
+                 .setStyle(API.ButtonStyle.Secondary)
+                 .setLabel(productscurrentpage[i].id.toString())
+                 .setEmoji(productscurrentpage[i].icon.split(':')[2] ? productscurrentpage[i].icon.split(':')[2].replace('>', '') : productscurrentpage[i].icon)
+                 .setDisabled(!productscurrentpage[i].buyable ? true : false)
+         );
       }
 
       let totalcomponents = butnList.length % perRow;
@@ -167,13 +193,14 @@ shopExtension.formatPages = async function(embed, { currentpage, totalpages }, p
       for (x = 0; x < totalcomponents; x++) {
           const var1 = (x+1)*perRow-perRow
           const var2 = ((x+1)*perRow)
-          const rowBtn = API.rowComponents(butnList.slice(var1, var2))
-          if (rowBtn.components.length > 0) components.push(rowBtn)
-
+          const btns = butnList.slice(var1, var2)
+          // ATUALIZAÇÃO v14: API.rowComponents -> new API.ActionRowBuilder()
+          if (btns.length > 0) {
+            components.push(new API.ActionRowBuilder().addComponents(btns))
+          }
       }
 
       return components
-
   }
 
   return reworkButtons()
@@ -310,7 +337,8 @@ shopExtension.execute = async function(interaction, p) {
     return;
   }
 
-  const embed = new API.Discord.MessageEmbed();
+  // ATUALIZAÇÃO v14: new API.Discord.MessageEmbed() -> new API.EmbedBuilder()
+  const embed = new API.EmbedBuilder();
   embed.setColor('#606060');
   embed.setAuthor(`${interaction.user.tag}`, interaction.user.displayAvatarURL({ format: 'png', dynamic: true, size: 1024 }))
   
@@ -326,10 +354,19 @@ shopExtension.execute = async function(interaction, p) {
   embed.addField('<a:loading:736625632808796250> Aguardando confirmação', `
   Você deseja comprar **${p.icon ? p.icon+' ':''}${p.name}** pelo preço de **${formatprice}**?`)
 
-  const btn0 = API.createButton('confirm', 'SECONDARY', '', '✅')
-  const btn1 = API.createButton('cancel', 'SECONDARY', '', '❌')
+  // ATUALIZAÇÃO v14: API.createButton -> new API.ButtonBuilder()
+  const btn0 = new API.ButtonBuilder()
+      .setCustomId('confirm')
+      .setStyle(API.ButtonStyle.Secondary)
+      .setEmoji('✅');
+  
+  const btn1 = new API.ButtonBuilder()
+      .setCustomId('cancel')
+      .setStyle(API.ButtonStyle.Secondary)
+      .setEmoji('❌');
 
-  const alltoedit = { embeds: [embed], components: [API.rowComponents([btn0, btn1])], fetchReply: true }
+  // ATUALIZAÇÃO v14: API.rowComponents -> new API.ActionRowBuilder()
+  const alltoedit = { embeds: [embed], components: [new API.ActionRowBuilder().addComponents(btn0, btn1)], fetchReply: true }
 
   let embedinteraction
 
@@ -481,7 +518,8 @@ shopExtension.execute = async function(interaction, p) {
       
       await API.eco.addToHistory(interaction.user.id, `Compra ${p.icon ? p.icon+' ':''}| - ${formatprice}`)
 
-      const embedcmd = new API.Discord.MessageEmbed()
+      // ATUALIZAÇÃO v14: new API.Discord.MessageEmbed() -> new API.EmbedBuilder()
+      const embedcmd = new API.EmbedBuilder()
           .setColor('#b8312c')
           .setTimestamp()
           .setTitle('🛒 | Loja')

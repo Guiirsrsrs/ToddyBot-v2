@@ -143,7 +143,8 @@ async function checkAll(API, interaction, { req, mastery: maestria = 0, companyt
     
     
     if (pobj.mvp != null && Date.now()-pobj.mvp > 0) {
-        const embed = new API.Discord.MessageEmbed()
+        // ATUALIZAÇÃO v14: new API.Discord.MessageEmbed() -> new API.EmbedBuilder()
+        const embed = new API.EmbedBuilder()
         .setColor(`#f21a0f`)
         .setTitle(`Opa, deslizou ai?`)
         .setDescription(`Seu **MVP** acaba de ter seu tempo expirado!\nPara adquirir **MVP** basta doar usando \`/doar\` e em seguida contatar o criador do bot\nPara conseguir cristais rapidamente você precisa doar para o bot e contatando o criador.\nPara entrar no servidor de suporte utilize \`/convite\``)
@@ -179,7 +180,8 @@ async function checkAll(API, interaction, { req, mastery: maestria = 0, companyt
     
 	if (totalcmds == 0) {
 		
-		const voteembed = new API.Discord.MessageEmbed()
+        // ATUALIZAÇÃO v14: new API.Discord.MessageEmbed() -> new API.EmbedBuilder()
+		const voteembed = new API.EmbedBuilder()
         voteembed.setDescription('Olá, vi que é a primeira vez sua no bot, não é mesmo? Acesse o tutorial usando `/tutorial`\nPara apoiar o amigo/pessoa que lhe convidou utilize `/apoiar <codigo do amigo>`\nCaso não tenha o código, peça para o mesmo.\nVocê também pode convidar amigos e ganhar recompensas! Utilize `/meucodigo`')
         voteembed.setFooter('Entre em nosso servidor oficial para ficar ciente das regras e evitar ser banido!')
         if (interaction.replied) await interaction.followUp({ embeds: [voteembed], mention: true})
@@ -197,7 +199,8 @@ async function checkAll(API, interaction, { req, mastery: maestria = 0, companyt
                 'Fique por dentro de **NOVIDADES**, **ANÚNCIOS** e principalmente dentro das **REGRAS** para evitar ser banido e ter um bom uso do bot.\nPara entrar no servidor oficial [CLIQUE AQUI](https://bit.ly/svnisru)'
             ]
 
-            const alertembed = new API.Discord.MessageEmbed()
+            // ATUALIZAÇÃO v14: new API.Discord.MessageEmbed() -> new API.EmbedBuilder()
+            const alertembed = new API.EmbedBuilder()
             .setDescription(words[API.random(0, words.length-1)])
             .setFooter('Entre em nosso servidor oficial para ficar ciente das regras e evitar ser banido!')
 
@@ -206,7 +209,8 @@ async function checkAll(API, interaction, { req, mastery: maestria = 0, companyt
     }
 	
 	if (API.logs.cmds) {
-        const embedcmd = new API.Discord.MessageEmbed()
+        // ATUALIZAÇÃO v14: new API.Discord.MessageEmbed() -> new API.EmbedBuilder()
+        const embedcmd = new API.EmbedBuilder()
         .setColor('#b8312c')
         .setTimestamp()
 		.setTitle('<:staff:788945462206922794> | Log de comando')

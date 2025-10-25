@@ -1,5 +1,5 @@
 const siteExtension = {}
-const API = require("../api.js");
+const API = require("../index");
 
 siteExtension.log = async function (id, action) {
 

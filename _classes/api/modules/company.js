@@ -1,7 +1,6 @@
+const API = require("../index");
 
-const API = require("../api.js");
-
-const Database = require('../manager/DatabaseManager');
+const Database = require("../../manager/DatabaseManager");
 const DatabaseManager = new Database();
 
 const debugmode = false
@@ -997,7 +996,8 @@ company.create = async function(member, ob) {
         
         try {
             let res = await DatabaseManager.query(`SELECT * FROM companies WHERE company_id=$1;`, [code]);
-            const embed = new API.Discord.MessageEmbed();
+            // ATUALIZAÇÃO v14: new API.Discord.MessageEmbed() -> new API.EmbedBuilder()
+            const embed = new API.EmbedBuilder();
 
             if (!res.rows[0]) {
                 try {

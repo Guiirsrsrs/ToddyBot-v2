@@ -1,5 +1,6 @@
 const trustedguilds = ['693150851396796446'];
 require('colors'); // Adicionado require colors se for usar .green
+const { ActivityType } = require('discord.js'); // ATUALIZAÇÃO v14: Importar ActivityType
 
 module.exports = {
 
@@ -10,11 +11,12 @@ module.exports = {
 
         async function u() {
             try {
-                // console.log('[READY] Tentando setar atividade...'); // Log repetitivo, comentado
-                // Garante que client.user existe antes de tentar usá-lo
                  if (client.user) {
-                     client.user.setActivity(`[${API.version}] Prefixo / | Tempo online: ${API.uptime()}`);
-                     // console.log('[READY] Atividade setada.'); // Log repetitivo, comentado
+                     // ATUALIZAÇÃO v14: setActivity agora requer um objeto com 'name' e 'type'
+                     client.user.setActivity({
+                         name: `[${API.version}] Prefixo / | Tempo online: ${API.uptime()}`,
+                         type: ActivityType.Playing // Ou Watching, Listening, Competing
+                     });
                  } else {
                      console.warn('[READY] client.user ainda não está disponível para setActivity.');
                  }
@@ -25,27 +27,25 @@ module.exports = {
         }
         await u(); // Chamar a função na inicialização
 
-        // Configura intervalos (mantém o código original)
+        // Configura intervalos
         setInterval(async () => {
             await u(); // Chamar a função u periodicamente
         }, 60000);
-        setInterval(async () => {
-            try { // Adicionado try-catch para sweep
-                 console.log('[SWEEP] Iniciando sweep de mensagens e emojis...');
-                 client.sweepMessages(1800);
-                 client.emojis.cache.sweep((emoji) => {
-                     // Lógica original de sweep de emojis
-                     if (!emoji.guild) return true; // Remove emojis sem guild (pode acontecer?)
-                     if (emoji.guild.name.includes('Emotes') || trustedguilds.includes(emoji.guild.id)) {
-                         return false;
-                     }
-                     return true;
-                 });
-                 console.log('[SWEEP] Sweep concluído.');
-            } catch(sweepErr) {
+
+        // ATUALIZAÇÃO v14: Remover sweepMessages e emojis.cache.sweep
+        /*
+         setInterval(async () => {
+             try {
+                 console.log('[SWEEP] Iniciando sweep...'); // Simplificado
+                 // client.sweepMessages(1800); // Removido
+                 // client.emojis.cache.sweep(...) // Removido
+                 console.log('[SWEEP] Sweep (automático v14) concluído.'); // Nota sobre v14
+             } catch(sweepErr) {
                  console.error('[ERRO][SWEEP] Falha durante o sweep:', sweepErr);
-            }
-        }, 1800000);
+             }
+         }, 1800000);
+         */
+         // O intervalo acima foi comentado/removido pois as funções não existem mais.
 
         const moment = require('moment');
         moment.suppressDeprecationWarnings = true;
@@ -55,7 +55,6 @@ module.exports = {
 
         console.log('[READY] Carregando API.cacheLists.remember...');
         try {
-            // Verifica se a função load existe antes de chamar
              if (API.cacheLists && API.cacheLists.remember && typeof API.cacheLists.remember.load === 'function') {
                 await API.cacheLists.remember.load();
                 console.log('[READY] API.cacheLists.remember carregado.');
@@ -110,7 +109,6 @@ module.exports = {
         // --- ADICIONADO: Carregar crateExtension ---
         console.log('[READY] Carregando API.crateExtension...');
         try {
-            // Verifica se o módulo e a função existem antes de chamar
             if (API.crateExtension && typeof API.crateExtension.load === 'function') {
                 await API.crateExtension.load();
                 console.log('[READY] API.crateExtension carregado.');
@@ -124,8 +122,8 @@ module.exports = {
         // --- FIM DA ADIÇÃO ---
 
 
-        console.log(`\n         Bot iniciado.`.green);
-        console.log(`         Versão ${API.version}\n`.green);
+        console.log(`\n        Bot iniciado.`.green);
+        console.log(`        Versão ${API.version}\n`.green);
         console.log('[READY] Evento Ready concluído.');
     }
 

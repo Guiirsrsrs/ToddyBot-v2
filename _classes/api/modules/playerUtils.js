@@ -1,6 +1,6 @@
-const API = require("../api.js");
+const API = require("../index");
 
-const Database = require('../manager/DatabaseManager');
+const Database = require("../../manager/DatabaseManager");
 const DatabaseManager = new Database();
 
 const playerUtils = {
@@ -12,7 +12,7 @@ playerUtils.execExp = async function(interaction, xpp, pure) {
 
     if (!interaction || xpp == null || xpp == undefined) return
 
-    const Discord = API.Discord;
+    const Discord = API.Discord; // Mantido por segurança, mas o Builder é preferível
     const obj = await DatabaseManager.get(interaction.user.id, "machines")
 
     const maq = API.shopExtension.getProduct(obj.machine);
@@ -38,13 +38,14 @@ playerUtils.execExp = async function(interaction, xpp, pure) {
 
       })
 
-      const embed = new Discord.MessageEmbed();
+      // ATUALIZAÇÃO v14: new Discord.MessageEmbed() -> new API.EmbedBuilder()
+      const embed = new API.EmbedBuilder();
       embed.setAuthor(interaction.user.tag, interaction.user.displayAvatarURL({ format: 'png', dynamic: true, size: 1024 }))
       embed.setImage('attachment://image.png')
       embed.addField(`🥇 Recompensas`, `**3x <:caixaup:782307290295435304> Caixa up**!
 Utilize \`/mochila\` para visualizar suas caixas.${obj.level+1 == 3 ? `\n \nVocê liberou acesso ao sistema de **EMPRESAS** do bot e a partir daqui você já pode trabalhar em alguma empresa!`:''}${obj.level+1 == 10 ? `\n \nVocê liberou acesso a **CRIAÇÃO DE EMPRESAS**, utilize \`/abrirempresa\` para mais informações.`:''}${slot ? `\n \nVocê recebeu **+1 Slot de Aprimoramento para máquinas**!\nUtilize \`/maquina\` para visualizar seus slots.\nUtilize \`/loja chipes\` para comprar chipes para seus slots.` : ''}`)
       embed.setFooter(`Você evoluiu do nível ${obj.level} para o nível ${obj.level+1}`)
-      embed.setColor('RANDOM');
+      embed.setColor('Random'); // ATUALIZAÇÃO v14: 'RANDOM' -> 'Random'
   
       API.crateExtension.give(interaction.user.id, 2, 3)
   
@@ -89,7 +90,8 @@ playerUtils.cooldown.set = async function(user_id, string, ms) {
 
 playerUtils.cooldown.message = async function(interaction, vare, text) {
   let cooldown = await API.playerUtils.cooldown.get(interaction.user.id, vare);
-  const embed = new API.Discord.MessageEmbed()
+  // ATUALIZAÇÃO v14: new API.Discord.MessageEmbed() -> new API.EmbedBuilder()
+  const embed = new API.EmbedBuilder()
   .setColor('#b8312c')
   .setDescription('🕑 Aguarde mais `' + API.ms(cooldown) + '` para ' + text + '.')
   .setAuthor(interaction.user.tag, interaction.user.displayAvatarURL({ format: 'png', dynamic: true, size: 1024 }))

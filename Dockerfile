@@ -1,32 +1,31 @@
-# Usar a tag LTS mais recente do Node 16
-FROM node:16-bullseye
+# Use a versão LTS mais recente do Node.js (v20) baseada em Alpine
+FROM node:20-alpine
 
-RUN apt-get update && apt-get install -y \
-    netcat-openbsd \
-    build-essential \
-    libcairo2-dev \
-    libpango1.0-dev \
-    libjpeg-dev \
-    libgif-dev \
-    librsvg2-dev \
- && rm -rf /var/lib/apt/lists/*
+# Instale as dependências do sistema necessárias para 'canvas' e outras libs
+# Use apk (gerenciador de pacotes Alpine)
+RUN apk update && apk add --no-cache \
+    wait4ports \
+    build-base \
+    cairo-dev \
+    pango-dev \
+    jpeg-dev \
+    giflib-dev \
+    librsvg-dev \
+ && rm -rf /var/cache/apk/*
 
+# Crie o diretório do aplicativo
 WORKDIR /usr/src/app
 
+# Copie package.json e package-lock.json (ou yarn.lock)
 COPY package*.json ./
+# Se você usar yarn, copie yarn.lock também:
+# COPY yarn.lock ./
 
-# --- NOVO PASSO ---
-# Garante que qualquer node_modules antigo seja removido
-RUN rm -rf node_modules
-# ------------------
+# Instale as dependências do Node.js
+# Se você usa yarn: RUN yarn install --production
+# Se você usa npm:
+RUN npm install --omit=dev --legacy-peer-deps
+# Use --omit=dev para pular dependências de desenvolvimento
+# Use --legacy-peer-deps se houver conflitos de dependência de pares que você deseja ignorar temporariamente
 
-RUN npm install
-
-COPY . .
-
-COPY docker-entrypoint.sh /usr/local/bin/
-RUN chmod +x /usr/local/bin/docker-entrypoint.sh
-
-ENTRYPOINT ["docker-entrypoint.sh"]
-
-CMD ["node", "bot.js"]
+# Cop

@@ -1,14 +1,22 @@
-const ShardingManager = require('./_classes/manager/ShardingManager');
-const config = require('./_classes/config');
-require('colors')
+// Exemplo em bot.js
+require('dotenv').config(); // Se usar dotenv
+const config = require("./_classes/config"); // Seu arquivo de config
+const NisrukshaShardManager = require('./_classes/manager/ShardingManager'); // A nova classe
 
-new ShardingManager(config).connect()
+// Validar config básica aqui se necessário
+
+// Instancia o manager com as configurações
+const manager = new NisrukshaShardManager(config);
+
+// Inicia o processo de sharding
+manager.connect()
     .then(() => {
-        console.log('Conectado com sucesso!'.green)
-    })  
+        console.log('[Bot] Sharding iniciado com sucesso.');
+    })
+    .catch(err => {
+        console.error('[Bot] Falha fatal ao iniciar sharding:', err);
+        process.exit(1);
+    });
 
-    .catch(err => {             
-        console.log('Erro ao conectar'.red)
-        console.log(err)
-    }
-)
+// Opcional: Manter o processo principal vivo ou adicionar mais lógica aqui
+// (Ex: Um servidor web para health checks)

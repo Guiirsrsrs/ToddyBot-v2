@@ -1,6 +1,6 @@
-const API = require("../api");
+const API = require("../index");
 
-const Database = require('../manager/DatabaseManager');
+const Database = require("../../manager/DatabaseManager");
 const DatabaseManager = new Database();
 
 const waiting = {}

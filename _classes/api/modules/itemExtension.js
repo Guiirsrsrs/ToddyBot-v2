@@ -1,5 +1,5 @@
-const API = require("../api.js");
-const Database = require('../manager/DatabaseManager');
+const API = require("../index");
+const Database = require("../../manager/DatabaseManager");
 const DatabaseManager = new Database();
 const itemExtension = {
 

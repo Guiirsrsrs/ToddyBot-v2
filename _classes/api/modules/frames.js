@@ -1,5 +1,5 @@
 const { readFileSync } = require('fs')
-const Database = require('../manager/DatabaseManager');
+const Database = require("../../manager/DatabaseManager");
 const DatabaseManager = new Database();
 
 const frames = {

@@ -1,7 +1,7 @@
-const API = require("../api.js");
-const Database = require('../manager/DatabaseManager');
+const API = require("../index");
+const Database = require("../../manager/DatabaseManager");
 const DatabaseManager = new Database();
-const config = require("../config");
+const config = require("../../config.js");
 
 const events = {
 
@@ -40,7 +40,8 @@ const events = {
 
     getRaceEmbed: function(aposta) {
 
-        const embed = new API.Discord.MessageEmbed()
+        // ATUALIZAÇÃO v14: new API.Discord.MessageEmbed() -> new API.EmbedBuilder()
+        const embed = new API.EmbedBuilder()
         embed.setColor('#36393f')
         embed.setTitle('Evento | Corrida de Cavalos')
 
@@ -116,8 +117,9 @@ events.getConfig = function(){ return config }
 events.alert = async function(text) {
     
     try {
-        const embed = new API.Discord.MessageEmbed()
-        embed.setColor('RANDOM')
+        // ATUALIZAÇÃO v14: new API.Discord.MessageEmbed() -> new API.EmbedBuilder()
+        const embed = new API.EmbedBuilder()
+        embed.setColor('Random') // ATUALIZAÇÃO v14: 'RANDOM' -> 'Random'
         embed.setTitle("Siga este canal em seu servidor para avisos de eventos")
         embed.setDescription(text)
         const channel = API.client.channels.cache.get(config.modules.events.channel)
