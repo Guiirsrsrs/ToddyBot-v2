@@ -1,0 +1,71 @@
+[
+    {
+        "name": "\"dinamite1\"",
+        "displayname": "Dinamite Pequena",
+        "icon": "🧨",
+        "desc": "Faz uma explosão na base de mineração e realiza a coleta dos minérios",
+        "usavel": true,
+        "rarity": "epic",
+        "type": 1,
+        "tier": 1,
+        "price": 15000
+    },
+    {
+        "name": "\"dinamite2\"",
+        "displayname": "Dinamite Média",
+        "icon": "🧨",
+        "desc": "Faz uma explosão na base de mineração e realiza a coleta dos minérios",
+        "usavel": true,
+        "rarity": "epic",
+        "type": 1,
+        "tier": 2,
+        "price": 25000
+    },
+    {
+        "name": "\"dinamite3\"",
+        "displayname": "Dinamite Grande",
+        "icon": "🧨",
+        "desc": "Faz uma explosão na base de mineração e realiza a coleta dos minérios",
+        "usavel": true,
+        "rarity": "epic",
+        "type": 1,
+        "tier": 3,
+        "price": 75000
+    },
+    {
+        "name": "\"cafe\"",
+        "displayname": "Café",
+        "icon": "☕",
+        "desc": "Recupera instantaneamente 35 de estamina",
+        "usavel": true,
+        "rarity": "epic",
+        "type": 2,
+        "tier": 1,
+        "value": 35,
+        "price": 25000
+    },
+    {
+        "name": "\"cogumelo marrom\"",
+        "displayname": "Cogumelo Marrom",
+        "icon": "☕",
+        "desc": "Recupera instantaneamente 40 de estamina",
+        "usavel": true,
+        "rarity": "epic",
+        "type": 2,
+        "tier": 1,
+        "value": 40,
+        "price": 35000
+    },
+    {
+        "name": "\"frasco de exp pequeno\"",
+        "displayname": "Frasco de EXP Pequeno",
+        "icon": "<:frasco:846496717251018752>",
+        "desc": "Ganha 500 de EXP por frasco",
+        "usavel": true,
+        "rarity": "epic",
+        "type": 3,
+        "tier": 1,
+        "value": 500,
+        "price": 10000
+    }
+]

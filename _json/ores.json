@@ -1,0 +1,185 @@
+[
+    {
+        "name": "fragmento",
+        "icon": "<:fragmento:843674514260623371>",
+        "nomine": true,
+        "price": {
+            "min": 0.45,
+            "default": 0.75,
+            "max": 1.55,
+            "atual": 0.75,
+            "ultimoupdate": "",
+            "updates": []
+        },
+        "por": 15
+    },
+    {
+        "name": "pedra",
+        "icon": "<:pedra:737381947197620289>",
+        "price": {
+            "min": 0.20,
+            "default": 0.25,
+            "max": 0.30,
+            "atual": 0.25,
+            "ultimoupdate": "",
+            "updates": []
+        },
+        "por": 96
+    },
+    {
+        "name": "cobre",
+        "icon": "<:cobre:737382572211961886>",
+        "price": {
+            "min": 3.44,
+            "default": 3.50,
+            "max": 3.63,
+            "atual": 3.50,
+            "ultimoupdate": "",
+            "updates": []
+        },
+        "por": 75
+    },
+    {
+        "name": "ferro",
+        "icon": "<:ferro:737383041277755392>",
+        "price": {
+            "min": 6.80,
+            "default": 7.15,
+            "max": 7.46,
+            "atual": 7.15,
+            "ultimoupdate": "",
+            "updates": []
+        },
+        "por": 63
+    },
+    {
+        "name": "bauxita",
+        "icon": "<:bauxita:737383336464482336>",
+        "price": {
+            "min": 10,
+            "default": 14,
+            "max": 16,
+            "atual": 14,
+            "ultimoupdate": "",
+            "updates": []
+        },
+        "por": 60
+    },
+    {
+        "name": "pirita",
+        "icon": "<:pirita:919781180260384798>",
+        "price": {
+            "min": 19.5,
+            "default": 25,
+            "max": 30,
+            "atual": 25,
+            "ultimoupdate": "",
+            "updates": []
+        },
+        "por": 53
+    },
+    {
+        "name": "manganes",
+        "icon": "<:manganes:737383544447303731>",
+        "price": {
+            "min": 33,
+            "default": 36,
+            "max": 39,
+            "atual": 36,
+            "ultimoupdate": "",
+            "updates": []
+        },
+        "por": 46
+    },
+    {
+        "name": "niobio",
+        "icon": "<:niobio:739967867805761556>",
+        "price": {
+            "min": 48,
+            "default": 55,
+            "max": 70,
+            "atual": 55,
+            "ultimoupdate": "",
+            "updates": []
+        },
+        "por": 30
+    },
+    {
+        "name": "ouro",
+        "icon": "<:ouro:739969415382171831>",
+        "price": {
+            "min": 287,
+            "default": 300,
+            "max": 317,
+            "atual": 300,
+            "ultimoupdate": "",
+            "updates": []
+        },
+        "por": 28
+    },
+    {
+        "name": "rubi",
+        "icon": "<:rubi:739972116149174392>",
+        "price": {
+            "min": 460,
+            "default": 480,
+            "max": 507,
+            "atual": 480,
+            "ultimoupdate": "",
+            "updates": []
+        },
+        "por": 8
+    },
+    {
+        "name": "ametista",
+        "icon": "<:ametista:739972116455096341>",
+        "price": {
+            "min": 890,
+            "default": 1300,
+            "max": 1800,
+            "atual": 1300,
+            "ultimoupdate": "",
+            "updates": []
+        },
+        "por": 5
+    },
+    {
+        "name": "diamante",
+        "icon": "<:diamante:739972116811612201>",
+        "price": {
+            "min": 3400,
+            "default": 3800,
+            "max": 4100,
+            "atual": 3800,
+            "ultimoupdate": "",
+            "updates": []
+        },
+        "por": 3
+    },
+    {
+        "name": "jade",
+        "icon": "<:jade:739972115943653376>",
+        "price": {
+            "min": 9400,
+            "default": 12800,
+            "max": 18100,
+            "atual": 12800,
+            "ultimoupdate": "",
+            "updates": []
+        },
+        "por": 2
+    },
+    {
+        "name": "safira",
+        "icon": "<:safira:851945445915230210>",
+        "price": {
+            "min": 12400,
+            "default": 16800,
+            "max": 25100,
+            "atual": 16800,
+            "ultimoupdate": "",
+            "updates": []
+        },
+        "por": 1
+    }
+]

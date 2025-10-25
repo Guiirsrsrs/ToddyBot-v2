@@ -1,0 +1,150 @@
+{
+    "2.0.0": {
+        "obs": "**Então galera, depois de muito tempo, finalmente saiu!**\nDigamos que é um NOVO bot, trabalhei nessa versão durante MÊSES e foi tudo REFEITO DO ZERO, ou seja, tudo do bot que vocês conheciam foram modificados. A database foi a principal alteração, ela foi resetada e eu coloquei uma nova (uma de verdade). Sei que muitos não vão gostar de eu ter resetado, porém, não há como converter os dados. Podem fazer críticas ou sugestões á vontade!",
+        "add": ["Tantas coisas que não consigo listar kskaka"],
+        "rem": ["Database antiga"],
+        "chn": ["Tudo refeito :)"],
+        "fix": [],
+        "alc": ["Utilize o comando de ajuda para visualizar"]
+    },
+    "2.0.1": {
+        "add": ["Comando para ver um ranking local", "Em alguns comandos adicionado pesquisa por id [Ex: n.money 422002630106152970]", "Adicionado top cristais"],
+        "rem": [],
+        "chn": ["Preço da máquina de cobre modificado [1000 -> 1500]"],
+        "fix": [],
+        "alc": []
+    },
+    "2.0.2": {
+        "add": [],
+        "rem": [],
+        "chn": ["Quantidade da placa de energia modificada [2 -> 5]", "Quantidade da placa de profundidade modificado [5 -> 15]", "Range de xp de mineração modificado [15,25 -> 15,35]"],
+        "fix": ["Histórico de compra de máquina não registrando", "Dinheiro não removido na compra de máquina"],
+        "alc": []
+    },
+    "2.0.3": {
+        "add": ["Comando de transferência de dinheiro"],
+        "rem": [],
+        "chn": ["Quantidade de caixas recebidas ao upar nível modifcada [1 -> 3]", "Nível requerido da máquina de ferro modificado [5 -> 3]", "Preço da máquina de bauxita modificado [100k -> 90k]", "Valor base do daily modificado [300 -> 350]"],
+        "fix": [],
+        "alc": []
+    },
+    "2.0.4": {
+        "add": [],
+        "rem": [],
+        "chn": [],
+        "fix": ["Corrigido cooldown do comando de transferência", "Mensagem do comando de sugestão invertida", "Comandos plantar e colher corrigidos"],
+        "alc": []
+    },
+    "2.0.5": {
+        "add": ["Termos de consentimento de recebimento de DM'S quando cria uma empresa ou quando envia currículo", "Para comprar uma máquina, você precisa ter a anterior á ela", "Cooldown para trocar a taxa da empresa (1 dia de cooldown)", "Comando para vender terrenos (Setor de agricultura)"],
+        "rem": [],
+        "chn": ["Balanceamento entre empresas", "Estamina gasta na coleta de flores modificada [50 -> 30]", "Xp ganho ao coletar flores modificado [1,3 -> 3,7]", "Estamina base para se mover entre vilas modificada [200 -> 350]"],
+        "fix": ["Corrigido problema quando vendia os minérios os itens da mochila eram vendidos juntos", "Erro no sistema de caça que dava para criar múltiplas instâncias"],
+        "alc": []
+    },
+    "2.0.6": {
+        "add": [],
+        "rem": [],
+        "chn": ["Nível requerido da máquina de niobio [15 ->  14]", "Estamina gasta ao se mover [350 -> 200]"],
+        "fix": ["Erro no sistema de caça que só dava para caçar 1 vez"],
+        "alc": []
+    },
+    "2.0.7": {
+        "add": [],
+        "rem": [],
+        "chn": ["Nível requerido da máquina de ouro [20 ->  16]", "Preço da máquina de ouro [1kk -> 2kk]"],
+        "fix": ["Xp ficava inexistente quando colhia alguma plantação"],
+        "alc": []
+    },
+    "2.0.8": {
+        "add": ["Estaminas de MVP recuperam mais rápido", "Agora no n.vitem da para ver a quantia de dinheiro da taxa da empresa", "Agora no daily MVP'S ganham uma caixa a mais como recompensa", "Programa de **BUG BOUNTY** <#780136326510673930>", "Adicionado setor de pesca 🐟", "Comandos do setor novo", "Comando n.funcionários", "Sistema de score para empresas", "Adicionado prevenção contra contas recentes no discord", "Comando de reputação n.rep", "Top reputações n.top e n.topsv", "Comando n.votar"],
+        "rem": ["Sistema de sorteios (do proprio bot)"],
+        "chn": ["Caixa ao upar de nível modificada para uma nova caixa", "Número máximo de cada item na mochila [20 -> 25]", "Tempo da plantação crescer foi reformulado", "Xp ganho na exploração nerfado pela metade", "Bloco de localização no perfil modificado para reputações", "Nome da caixa de level e recompensas base modificadas", "Nível requerido da máquina de ametista, diamante e jade"],
+        "fix": ["Chance do nível do mob vir negativo na exploração e assim o xp ficava negativo", "Quando apagava mensagem de mineração gerava erros"],
+        "alc": ["venderitem > venderi"]
+    },
+	"2.0.9": {
+        "add": ["Tier da máquina em n.maquina", "Comando n.tutorial", "Comando n.botinfo", "O streak máximo do daily foi aumentado para 50", "Agora os comandos são respondidos via \"responder\"", "Recompensa para quem votar no 1º SITE (n.votar)", "Site de tutorial/wiki do bot (n.site)", "Agora o bot te avisa quando você não votar no bot c:", "Pré-requisito de máquina de ferro para dar rep á alguém"],
+        "rem": [],
+        "chn": ["Preço da máquina de ferro [20000 -> 15000]", "Níveis dos monstros shiny modificados", "Chances de capturar peixes buffadas", "Agora máquina de diamante e jade custam cristais a mais", "Comando n.funcionarios adaptado", "Preço da máquina de diamante e jade", "Nível da máquina de ametista reduzido", "Geração de peixes do setor de pesca otimizado"],
+        "fix": ["Quando morria na exploração o nível não era resetado"],
+        "alc": ["convite > suporte"]
+    },
+	"2.1.0": {
+		"title": "Games & Treasures",
+        "add": ["Nova placa de energia +7 na loja de convites", "Nova categoria convites na loja", "Comando n.apoiar", "Comando n.meucodigo", "Comando n.girar", "Sistema de aparecimento e escavação de tesouros no mapa"],
+        "rem": [],
+        "chn": ["Profundidade padrão das máquinas dobrados (Vai mexer numa % da geração, não vai dobrar os minérios)", "Placa de profundidade simples adicionado +5 na profundidade", "Limite do daily dobrado [50 -> 100]", "Aumentada a chance de aparecer peixes no comando de pesca", "Preço dos peixes buffados", "Barra de progresso do daily removida", "Preço em cristais da máquina de diamante reduzido"],
+        "fix": ["Bug grave de ao vender um item da mochila sem estar em uma empresa crashar o bot", "O vitem vendia além dos itens, também os minérios", "Caracteres especiais do perfil ocultados"],
+        "alc": []
+    },
+	"2.1.1": {
+        "title": "Segundo Luar",
+        "add": ["Sistema de auto-hunt para MVP na empresa de exploração", "Preço de cristais nas máquinas de rubi e ametista", "Preço de cristais nos terrenos 50 e 100m²", "Novos mobs e drops na empresa de exploração", "Novas sementes para empresa de agricultura", "Novos peixes e varas para empresa de pescaria"],
+        "rem": [],
+        "chn": ["Máximo de cada item na mochila [25 -> 30]", "Máximo de quantidade das plantações [25 -> 20]", "Custo de estamina ao se mover [200 -> 150]", "Balanceamento de itens das empresas", "Delay de mineração modificado [20s -> 18s]", "Dados e drops de monstros reformulados na empresa de exploração", "Preço da compra/troca de vara de pesca reduzido", "A mensagem de level up foi trocada por uma imagem", "Preço para comprar/upar vara de pesca reduzidos", "Tempo de crescimento das plantações levemente reduzidos"],
+        "fix": ["Erro de snowflake id no n.maquina", "Bug da contagem dos peixes na pesca ficarem travadas em 2x", "Peixes não estavam sincronizados com a rodada de coleta"],
+        "alc": ["mochila > inv", "transferir > pay"]
+    },
+	"2.1.2": {
+        "add": ["Movimentação no n.cotação", "Novo chipe \"Aceleração\"", "Novo chipe \"Antidesgastante\"", "Mesmo depois de reiniciar o bot a energia e estamina serão relembradas", "Máximo de aposta de fichas em flip (giro)", "Máximo de profundidade para cada vara de pesca"],
+        "rem": [],
+        "chn": ["Nome das placas foram modificados para CHIP'S", "O upgrade da vara de pesca não é mais randômico: estrela -> estamina -> profundidade", "Quando morrer na exploração perde apenas o progresso em xp", "Quantidade mínima de plantas na plantação [10 -> 5]", "Agora ao upar a vara de pesca a estamina vai diminuir ao invés de aumentar", "Estamina padrão das varas de pesca modificados"],
+        "fix": ["Quando passava de 5 peixes coletados na pesca as infos bugavam"],
+        "alc": []
+    },
+	"2.1.3": {
+        "add": ["Opção para mais funcionários máximos na empresa em n.funcionários", "Comando n.cooldowns", "Compra de terrenos e upgrade no \"n.terrenoatual\"", "Adicionada opção para MVPS usarem n.colher tudo para agricultura", "Integrado novas opções de setarvagas e taxa no n.editarempresa", "Balanceamento no ganho de estrelas"],
+        "rem": ["Categoria \"terrenos\" da loja", "Comando n.setarvaga", "comando n.setartaxa"],
+        "chn": ["Preço de venda por cada ficha [910 -> 810]"],
+        "fix": ["Burlar cooldown de venda de minérios/itens", "Quando executava n.veremp <qualquer pessoa> o bot não respondia a empresa"],
+        "alc": ["uparvara > uv", "terreno modificado para terrenoatual"]
+    },
+	"2.1.4": {
+        "add": ["Sistema de badges para perfil", "Comando n.upararmazém", "Novo evento Corrida de Cavalos", "Slot 5 de chipes da máquina somente para MVPS", "10% de chance a mais de pegar peixe para MVPS", "Botão de subir anzol na pescaria para MVPS"],
+        "rem": [],
+        "chn": ["Imagem de perfil padrão modificada", "A biografia de perfil suporta +10 caracteres", "Rework nos níveis gerais e ganho de experiência"],
+        "fix": ["Contagem de peixes reiniciava quando descartava o peixe"],
+        "alc": []
+    },
+	"2.1.5": {
+        "add": ["Itens com efeitos que podem ser usados", "Comando n.usaritem", "Reações de confirmação para alterar o nome da empresa", "Nova opção n.desequipar tudo", "Visualização de quando será a próxima modificação da cotação", "Nova opção no n.editarempresa para modificar o nome da empresa", "Novo site para votos"],
+        "rem": ["Site zuraaa de votos"],
+        "chn": ["Delay update da pescaria [5 -> 8]", "Delay update da coleta [8 -> 15]", "Loja de convites -> loja temporal", "Máximo de fichas do flip [1000 -> 5000]", "Agora o flip vai ser somente contra membros", "Tamanho por nível de armazém [1200 -> 1000]", "Pontos de convite -> pontos temporais"],
+        "fix": [],
+        "alc": ["Adicionado money -> pontostemp", "Removido money -> conta"]
+    },
+    "2.1.6": {
+        "add": ["Conversão de dinheiro [Ex: 500k -> 500000]", "A cada 5 daily agora você ganha +1 cristal", "Comando n.molduras", "Loja de mochilas", "Quando comprar outra máquina os chipes dela vão ser desequipados", "Novo tipo de chipe"],
+        "rem": [],
+        "chn": ["Sistema de mochila adaptado para a nova loja", "Inventário de chipes movido para o n.maquina"],
+        "fix": ["Transferir para o próprio autor do comando", "Mencionar você mesmo no flip"],
+        "alc": ["botinfo -> bi"]
+    },
+    "2.1.7": {
+        "title": "EP 0 - Progressão",
+        "add": ["Sistema de combos na exploração", "Novo jogo n.cartasdasorte", "Comando n.inspecionaritem", "Sistema de adubação em agricultura", "<:icon7:851946616738152478> Setor de processamento", "Máquina e minério de safira <:maq11:852242635384946728> <:safira:851945445915230210>", "Rework no n.terrenoatual", "Gráficos de cotações de minérios n.cotação <minério>", "Sistema de pontos de maestria", "Integrado rankingsv ao n.ranking", "Adicionado comandos slash", "Algumas reações de comandos foram migradas para botões"],
+        "rem": ["Daily agora não possui um máximo de streak definido", "Categoria trabalhos", "Comando colher", "Comando rankingsv"],
+        "chn": ["Custo para melhorar a vara de pesca reduzido", "Pequeno aumento no ganho de xp na mineração (Cerca de 10% de aumento)", "Custo de estamina ao mover modificado [150 -> 100]", "Multiplicador da uva na roleta modificado [10x -> 6.5x]", "Dano tomado por monstros na exploração reduzido", "Comandos de trabalhos das empresas movido para n.setores"],
+        "fix": ["Top local"],
+        "alc": ["versão -> temporada"]
+    },
+    "2.1.8": {
+        "add": ["Velocidade do n.perfil melhorado em ~350%"],
+        "chn": ["Abertura de caixas simultâneas [10 -> 30]", "Tempo de recarregamento de energia para MVP's melhorado", "Custo para remover processo [200 -> 100]", "Custo para iniciar processo [100 -> 50]", "Combos na exploração [3 -> 5]", "Taxa de depósito reduzida para MVP'S [5% -> 2%]"],
+        "rem": ["Limite de comandos e ter que estar no servidor oficial"]
+    },
+    "2.1.9": {
+        "title": "EP 1 - Tecnologias",
+        "add": ["Limite de funcionários máximos [8 -> 10]", "Custo para liberar vaga na empresa [80 -> 60]", "Botão de skip na abertura de caixas", "Novo evento Pato dourado <:pato:919946658941399091>", "Sistema de descontos na loja", "Novo minério, máquina e fragmento de pirita [<:pirita:919781180260384798>, <:piritamaquina:919787769054756864> e <:pifragment:919781611791347753>]", "10 novos monstros para exploração", "Novo jogo de aposta **BLACKJACK**", "Novas mochilas [<:bp11:917087272476737536>, <:bp12:917087272476737567>, <:bp13:917087272501923870>, <:bp14:917087272627761254>]", "Novas variáveis para as máquinas [**Pressão, Refrigeração e Poluentes**]", "Botões no comando /maquina", "Novos chipes [<:chip:914919602461478923>, <:chip:916423648959660082> e <:chip:916438678098804736>]"],
+        "chn": ["Padrão de procura de monstros modificado", "Tempo de update mineração base [20 -> 12]", "Comandos por mensagem migrados para slash (/)", "Sistema de relembrar energia movido para o /maquina"],
+        "rem": ["Ranking local", "Limite de transferência acima do nível 50", "Loja reparos", "Comando /energia", "Comando /equipar", "Comando /desequipar"],
+        "fix": ["Itens usáveis não estavam sendo recompensados no tesouro", "Bug de multiplicar roletas pelas mesmas fichas", "Bug de alguns componentes do perfil desaparecerem quando usavam molduras redondas"]
+    },
+    "2.2.0": {
+        "add": ["Taxa de venda de minérios"],
+        "chn": ["Update de pesca [8 -> 5 segundos]", "Mensagem de caça"],
+        "rem": [],
+        "fix": ["Certos itens não eram recompensados nos tesouros", "Tier da máquina resetando após usar dinamite"]
+    }
+}
