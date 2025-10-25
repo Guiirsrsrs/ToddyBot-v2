@@ -3,9 +3,12 @@ FROM node:20-alpine
 
 # Instale as dependências do sistema necessárias para 'canvas' e outras libs
 # Use apk (gerenciador de pacotes Alpine)
+# Dentro do Dockerfile
 RUN apk update && apk add --no-cache \
     wait4ports \
     build-base \
+    python3 \
+    py3-pip \
     cairo-dev \
     pango-dev \
     jpeg-dev \

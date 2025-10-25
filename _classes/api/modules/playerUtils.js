@@ -1,154 +1,319 @@
-const API = require("../index");
+// _classes/api/modules/playerUtils.js
 
-const Database = require("../../manager/DatabaseManager");
-const DatabaseManager = new Database();
+const API = require('../index'); // Importa API centralizada
+const DatabaseManager = API.DatabaseManager; // Usa a instância do DBManager
 
 const playerUtils = {
   cooldown: {},
   stamina: {}
-}
+};
 
+// --- Sistema de Experiência ---
+
+/**
+ * Adiciona experiência ao jogador e lida com level up.
+ * @param {Interaction} interaction - Objeto da interação do Discord.
+ * @param {number} xpp - Quantidade de XP base a adicionar.
+ * @param {boolean} pure - Se true, não aplica bônus de tier da máquina.
+ * @returns {Promise<number>} A quantidade de XP efetivamente adicionada.
+ */
 playerUtils.execExp = async function(interaction, xpp, pure) {
+    if (!interaction?.user || xpp == null) return 0; // Verifica interaction e user
 
-    if (!interaction || xpp == null || xpp == undefined) return
+    const userId = interaction.user.id;
+    const machinesDoc = await DatabaseManager.findOne('machines', { user_id: userId });
 
-    const Discord = API.Discord; // Mantido por segurança, mas o Builder é preferível
-    const obj = await DatabaseManager.get(interaction.user.id, "machines")
+    // Se o usuário não tem registro em 'machines', cria um padrão ou retorna
+    if (!machinesDoc) {
+        console.warn(`[PlayerUtils] Documento 'machines' não encontrado para ${userId}. Não foi possível adicionar XP.`);
+        // Opcional: Criar um documento padrão aqui se necessário
+        // await DatabaseManager.insertOne('machines', { user_id: userId, level: 1, xp: 0, totalxp: 0, machine: 0, ... });
+        return 0;
+    }
 
-    const maq = API.shopExtension.getProduct(obj.machine);
+    const currentLevel = machinesDoc.level || 1; // Padrão nível 1
+    const currentXp = machinesDoc.xp || 0;
+    const machineId = machinesDoc.machine || 0;
+    const maq = API.shopExtension.getProduct(machineId) || { tier: 0 }; // Objeto padrão se máquina não encontrada
 
-    const xp = (pure ? xpp : Math.round((xpp * (maq.tier+1))/1.35))
-  
-    if (obj.xp + xp >= (obj.level*1980)) {
-  
-      DatabaseManager.set(interaction.user.id, "machines", "level", obj.level+1)
-      DatabaseManager.set(interaction.user.id, "machines", "xp", 0);
-  
-      let slot = false;
-      if ((obj.level+1)%6 == 0) {
-          if ((((obj.level+1)-((obj.level+1)%6))/6) < 5) {
-            slot = true;
-          }
-      }
+    const xpToAdd = pure ? Math.round(xpp) : Math.round((xpp * (maq.tier + 1)) / 1.35);
+    const xpNeeded = currentLevel * 1980; // XP necessário para o próximo nível
+    let finalXp = currentXp + xpToAdd;
+    let leveledUp = false;
+    let newLevel = currentLevel;
 
-      const levelupimage = await API.img.imagegens.get('levelup.js')(API, {
+    const updates = { $inc: { totalxp: xpToAdd } }; // Sempre incrementa totalxp
 
-          level: obj.level,
-          avatar: interaction.user.displayAvatarURL({ format: 'png', dynamic: true, size: 1024 }),
+    if (finalXp >= xpNeeded) {
+        leveledUp = true;
+        newLevel = currentLevel + 1;
+        finalXp = finalXp - xpNeeded; // XP restante após upar
 
-      })
+        updates.$set = { level: newLevel, xp: finalXp }; // Define novo nível e XP restante
+        console.log(`[PlayerUtils] Usuário ${userId} subiu para o nível ${newLevel}!`);
+    } else {
+        updates.$inc.xp = xpToAdd; // Apenas incrementa XP atual
+    }
 
-      // ATUALIZAÇÃO v14: new Discord.MessageEmbed() -> new API.EmbedBuilder()
-      const embed = new API.EmbedBuilder();
-      embed.setAuthor(interaction.user.tag, interaction.user.displayAvatarURL({ format: 'png', dynamic: true, size: 1024 }))
-      embed.setImage('attachment://image.png')
-      embed.addField(`🥇 Recompensas`, `**3x <:caixaup:782307290295435304> Caixa up**!
-Utilize \`/mochila\` para visualizar suas caixas.${obj.level+1 == 3 ? `\n \nVocê liberou acesso ao sistema de **EMPRESAS** do bot e a partir daqui você já pode trabalhar em alguma empresa!`:''}${obj.level+1 == 10 ? `\n \nVocê liberou acesso a **CRIAÇÃO DE EMPRESAS**, utilize \`/abrirempresa\` para mais informações.`:''}${slot ? `\n \nVocê recebeu **+1 Slot de Aprimoramento para máquinas**!\nUtilize \`/maquina\` para visualizar seus slots.\nUtilize \`/loja chipes\` para comprar chipes para seus slots.` : ''}`)
-      embed.setFooter(`Você evoluiu do nível ${obj.level} para o nível ${obj.level+1}`)
-      embed.setColor('Random'); // ATUALIZAÇÃO v14: 'RANDOM' -> 'Random'
-  
-      API.crateExtension.give(interaction.user.id, 2, 3)
-  
-      await interaction.channel.send({ embeds: [embed], mention: true, files: [levelupimage]});
-  
-    } else DatabaseManager.increment(interaction.user.id, "machines", "xp", xp);
-  
-    DatabaseManager.increment(interaction.user.id, "machines", "totalxp", xp);
+    // Atualiza o banco de dados
+    await DatabaseManager.updateOne('machines', { user_id: userId }, updates);
 
-    return xp
-  
-}
+    // Lógica de Level Up (Mensagem, Recompensas)
+    if (leveledUp) {
+        let slotGain = false;
+        if (newLevel % 6 === 0) {
+            // Calcula quantos slots deveriam ter no novo nível
+            const expectedSlots = Math.floor(newLevel / 6);
+            if (expectedSlots > 0 && expectedSlots <= 5) { // Limite de 5 slots
+                // Verifica quantos slots o usuário JÁ tem (precisaria buscar o doc de novo ou adicionar 'slots' ao projection inicial)
+                // Assumindo que a recompensa é dada a cada 6 níveis
+                 slotGain = true;
+                // A lógica real de adicionar slot pode precisar ir para outro lugar
+                // ou ser feita aqui com $push ou $set no array 'slots' (se existir)
+            }
+        }
 
-playerUtils.cooldown.check = async function(user_id, string) {
-  let time = await API.playerUtils.cooldown.get(user_id, string)
-  if (time < 1 ) return false;
-  return true;
-}
+        try {
+            const levelupImageAttachment = await API.img.imagegens.get('levelup')?.(API, { // Optional chaining no get
+                level: currentLevel, // Nível antigo
+                avatar: interaction.user.displayAvatarURL({ format: 'png', dynamic: true, size: 1024 }),
+            });
 
-playerUtils.cooldown.get = async function(user_id, string) { 
+            const embed = new API.EmbedBuilder()
+                .setAuthor({ name: interaction.user.tag, iconURL: interaction.user.displayAvatarURL({ dynamic: true }) })
+                .setFooter({ text: `Você evoluiu do nível ${currentLevel} para o nível ${newLevel}` })
+                .setColor('Random');
 
-  const text =  `ALTER TABLE cooldowns ADD COLUMN IF NOT EXISTS ${string} text NOT NULL DEFAULT '0;0';`
-  await DatabaseManager.query(text);
+            if (levelupImageAttachment) {
+                 embed.setImage(`attachment://${levelupImageAttachment.name || 'image.png'}`); // Usa o nome do anexo
+            }
 
-  const obj = await DatabaseManager.get(user_id, "cooldowns");
-  if (obj == null || obj == "0;0" || obj == undefined) {
-      API.playerUtils.cooldown.set(user_id, string, 0);
-      return 0;
-  }
-  let cooldown = obj[string];
-  let res = (Date.now()/1000)-(parseInt(cooldown.split(";")[0])/1000)
-  let time = parseInt(cooldown.split(";")[1]) - res;
-  time = Math.round(time)*1000
-  return time;
-}
+            let rewardText = `**3x <:caixaup:782307290295435304> Caixa up**!\nUtilize \`/mochila\` para visualizar suas caixas.`;
+            if (newLevel === 3) rewardText += `\n \nVocê liberou acesso ao sistema de **EMPRESAS**!`;
+            if (newLevel === 10) rewardText += `\n \nVocê liberou acesso a **CRIAÇÃO DE EMPRESAS**! Utilize \`/abrirempresa\`.`;
+            if (slotGain) rewardText += `\n \nVocê recebeu **+1 Slot de Aprimoramento**! Use \`/maquina\`.`;
 
-playerUtils.cooldown.set = async function(user_id, string, ms) {
-  const text =  `ALTER TABLE cooldowns ADD COLUMN IF NOT EXISTS ${string} text NOT NULL DEFAULT '0;0';`
-  await DatabaseManager.query(text);
-  DatabaseManager.set(user_id, "cooldowns", string, `${Date.now()};${ms}`);
-}
+            embed.addFields({ name: `🥇 Recompensas Nv. ${newLevel}`, value: rewardText });
 
-playerUtils.cooldown.message = async function(interaction, vare, text) {
-  let cooldown = await API.playerUtils.cooldown.get(interaction.user.id, vare);
-  // ATUALIZAÇÃO v14: new API.Discord.MessageEmbed() -> new API.EmbedBuilder()
+            API.crateExtension.give(userId, 2, 3);
+
+            // Envia a mensagem no canal da interação
+            await interaction.channel?.send({ // Optional chaining no channel
+                 content: `${interaction.user}`, // Menção
+                 embeds: [embed],
+                 files: levelupImageAttachment ? [levelupImageAttachment] : [] // Adiciona anexo se existir
+             }).catch(err => console.error("[PlayerUtils] Erro ao enviar mensagem de level up:", err));
+
+        } catch (levelUpError) {
+             console.error(`[ERRO][PlayerUtils] Falha ao processar level up para ${userId}:`, levelUpError);
+             if(API.client?.emit) API.client.emit('error', levelUpError);
+        }
+    }
+
+    return xpToAdd; // Retorna o XP que foi efetivamente considerado
+};
+
+
+// --- Sistema de Cooldowns ---
+
+/**
+ * Obtém o tempo restante de um cooldown em milissegundos.
+ * @param {string} user_id - ID do usuário.
+ * @param {string} cooldownName - Nome do cooldown (será o nome do campo no documento).
+ * @returns {Promise<number>} Tempo restante em ms (0 se não estiver em cooldown).
+ */
+playerUtils.cooldown.get = async function(user_id, cooldownName) {
+    if (!cooldownName) return 0; // Nome inválido
+
+    // Busca apenas o campo específico do cooldown
+    const projection = { projection: { [cooldownName]: 1 } };
+    const doc = await DatabaseManager.findOne('cooldowns', { user_id: user_id }, projection);
+
+    const cooldownData = doc?.[cooldownName]; // Acessa o campo dinamicamente
+
+    if (!cooldownData || typeof cooldownData.timestamp !== 'number' || typeof cooldownData.duration !== 'number') {
+        return 0; // Cooldown não existe ou está mal formatado
+    }
+
+    const timePassed = (Date.now() - cooldownData.timestamp) / 1000; // Tempo passado em segundos
+    const timeLeft = cooldownData.duration - timePassed; // Tempo restante em segundos
+
+    return Math.max(0, Math.round(timeLeft * 1000)); // Retorna em ms, mínimo 0
+};
+
+/**
+ * Define um cooldown para um usuário.
+ * @param {string} user_id - ID do usuário.
+ * @param {string} cooldownName - Nome do cooldown.
+ * @param {number} durationSeconds - Duração do cooldown em segundos.
+ */
+playerUtils.cooldown.set = async function(user_id, cooldownName, durationSeconds) {
+    if (!cooldownName) return; // Nome inválido
+    const value = Number(durationSeconds) || 0;
+    if (value < 0) return; // Duração não pode ser negativa
+
+    const filter = { user_id: user_id };
+    // Armazena o timestamp de início e a duração
+    const update = { $set: { [cooldownName]: { timestamp: Date.now(), duration: value } } };
+    await DatabaseManager.updateOne('cooldowns', filter, update, { upsert: true });
+};
+
+/**
+ * Verifica se um usuário está em um determinado cooldown.
+ * @param {string} user_id - ID do usuário.
+ * @param {string} cooldownName - Nome do cooldown.
+ * @returns {Promise<boolean>} True se estiver em cooldown, false caso contrário.
+ */
+playerUtils.cooldown.check = async function(user_id, cooldownName) {
+  let time = await playerUtils.cooldown.get(user_id, cooldownName);
+  return time > 0;
+};
+
+/**
+ * Envia uma mensagem de cooldown para o usuário.
+ * @param {Interaction} interaction - Objeto da interação.
+ * @param {string} cooldownName - Nome do cooldown.
+ * @param {string} actionText - Texto descrevendo a ação (ex: "digitar outro comando").
+ * @returns {Promise<Message|null>} A mensagem de resposta enviada ou null.
+ */
+playerUtils.cooldown.message = async function(interaction, cooldownName, actionText) {
+  let cooldownTime = await playerUtils.cooldown.get(interaction.user.id, cooldownName);
+  if (cooldownTime <= 0) return null; // Não envia mensagem se não houver cooldown
+
   const embed = new API.EmbedBuilder()
-  .setColor('#b8312c')
-  .setDescription('🕑 Aguarde mais `' + API.ms(cooldown) + '` para ' + text + '.')
-  .setAuthor(interaction.user.tag, interaction.user.displayAvatarURL({ format: 'png', dynamic: true, size: 1024 }))
-  const embedinteraction = await interaction.reply({ embeds: [embed] });
-  return embedinteraction;
-}
+      .setColor('#b8312c')
+      .setDescription(`🕑 Aguarde mais \`${API.utils.ms(cooldownTime)}\` para ${actionText}.`)
+      .setAuthor({ name: interaction.user.tag, iconURL: interaction.user.displayAvatarURL({ dynamic: true }) });
 
+   try {
+       // Tenta responder à interação (ephemeral se possível)
+       if (interaction.replied || interaction.deferred) {
+            return await interaction.editReply({ embeds: [embed], ephemeral: true });
+       } else {
+            return await interaction.reply({ embeds: [embed], ephemeral: true });
+       }
+   } catch (error) {
+       console.error(`[PlayerUtils] Erro ao enviar mensagem de cooldown para ${interaction.user.id}:`, error);
+       // Tenta enviar no canal como fallback se a resposta falhar
+       try {
+            return await interaction.channel?.send({ embeds: [embed] });
+       } catch {
+            return null; // Falha total
+       }
+   }
+};
+
+
+// --- Sistema de Maestria ---
+
+/**
+ * Adiciona pontos de maestria a um usuário.
+ * @param {string} user_id - ID do usuário.
+ * @param {number} value - Quantidade a adicionar.
+ */
 playerUtils.addMastery = async function(user_id, value) {
-  DatabaseManager.increment(user_id, 'players', 'mastery', value)
-}
+  await DatabaseManager.increment(user_id, 'players', 'mastery', value, 'user_id');
+};
 
+/**
+ * Obtém os pontos de maestria de um usuário.
+ * @param {string} user_id - ID do usuário.
+ * @returns {Promise<number>} Pontos de maestria (padrão 0).
+ */
 playerUtils.getMastery = async function (user_id) {
-  let result
-  let obj = await DatabaseManager.get(user_id, "players");
-  result = obj["mastery"];
-  return result;
-}
+  const doc = await DatabaseManager.findOne('players', { user_id: user_id }, { projection: { mastery: 1 } });
+  return doc?.mastery || 0;
+};
 
+
+// --- Sistema de Stamina (Usando Timestamp) ---
+// Constantes para Stamina
+const MAX_STAMINA = 1000;
+const STAMINA_REGEN_INTERVAL_SECONDS = 30; // A cada 30 segundos regenera 1 ponto
+
+/**
+ * Obtém a stamina atual do usuário.
+ * @param {string} user_id - ID do usuário.
+ * @returns {Promise<number>} Stamina atual (0 a MAX_STAMINA).
+ */
 playerUtils.stamina.get = async function(user_id) {
-  const obj = await DatabaseManager.get(user_id, 'players')
-  let stamina = obj.stamina;
+    const doc = await DatabaseManager.findOne('players', { user_id: user_id }, { projection: { staminaTimestamp: 1 } });
+    const timestampWhenFull = doc?.staminaTimestamp || 0; // Timestamp (ms) de quando a stamina estará cheia
 
-  let res = (Date.now()/1000)-(stamina/1000);
-  let time = 1000*30 - res;
-  time = Math.round(time)
-  if (time < 1){ 
-    stamina = 1000;
-  } else {
-    stamina = (1000-((time-(time%30))/30))-1;
-  }
-  return stamina;
-}
+    const now = Date.now();
+    if (now >= timestampWhenFull) {
+        return MAX_STAMINA; // Já está cheia
+    }
 
+    const msRemaining = timestampWhenFull - now;
+    const secondsRemaining = Math.ceil(msRemaining / 1000); // Segundos restantes arredondados para cima
+    const pointsToRegen = Math.floor(secondsRemaining / STAMINA_REGEN_INTERVAL_SECONDS); // Quantos pontos ainda faltam regenerar
+
+    // Stamina atual é o máximo menos o que falta regenerar
+    const currentStamina = MAX_STAMINA - pointsToRegen;
+
+    return Math.max(0, currentStamina); // Garante que não seja negativo
+};
+
+/**
+ * Obtém o tempo restante (em ms) até a stamina ficar cheia.
+ * @param {string} user_id - ID do usuário.
+ * @returns {Promise<number>} Tempo restante em ms (0 se já estiver cheia).
+ */
 playerUtils.stamina.time = async function(user_id) {
-  const obj = await DatabaseManager.get(user_id, 'players')
-  let stamina = obj.stamina;
-  let res = (Date.now()/1000)-(stamina/1000);
-  let time = 1000*30 - res;
-  time = Math.round(time)
-  return time*1000;
-}
+    const doc = await DatabaseManager.findOne('players', { user_id: user_id }, { projection: { staminaTimestamp: 1 } });
+    const timestampWhenFull = doc?.staminaTimestamp || 0;
 
-playerUtils.stamina.set = async function(user_id, valor) {
-  DatabaseManager.set(user_id, 'players', 'stamina', valor)
-}
-playerUtils.stamina.subset = async function(user_id, valor) {
-  API.playerUtils.stamina.set(user_id, Date.now()-(30000*(valor)))
-}
+    const now = Date.now();
+    const msRemaining = timestampWhenFull - now;
 
-playerUtils.stamina.remove = async function(user_id, valor) {
-  const get = await playerUtils.stamina.get(user_id)
-  playerUtils.stamina.subset(user_id, get-valor)
-}
+    return Math.max(0, msRemaining); // Retorna tempo restante ou 0
+};
 
-playerUtils.stamina.add = async function(user_id, valor) {
-  const get = await playerUtils.stamina.get(user_id)
-  playerUtils.stamina.subset(user_id, get+valor)
-}
+/**
+ * Define o timestamp (em ms) de quando a stamina estará cheia.
+ * Usado internamente por subset, add, remove.
+ * @param {string} user_id - ID do usuário.
+ * @param {number} timestampMs - O timestamp em milissegundos.
+ */
+playerUtils.stamina.set = async function(user_id, timestampMs) {
+    const value = Number(timestampMs) || 0;
+    await DatabaseManager.set(user_id, 'players', 'staminaTimestamp', value, 'user_id');
+};
 
-module.exports = playerUtils
+/**
+ * Define a stamina do usuário para um valor específico, calculando o timestamp futuro.
+ * @param {string} user_id - ID do usuário.
+ * @param {number} targetStamina - O valor de stamina desejado (0 a MAX_STAMINA).
+ */
+playerUtils.stamina.subset = async function(user_id, targetStamina) {
+    const safeTarget = Math.max(0, Math.min(MAX_STAMINA, Number(targetStamina) || 0));
+    const pointsNeeded = MAX_STAMINA - safeTarget; // Pontos que precisam regenerar
+    const secondsToRegen = pointsNeeded * STAMINA_REGEN_INTERVAL_SECONDS;
+    const newTimestampWhenFull = Date.now() + (secondsToRegen * 1000);
+    await playerUtils.stamina.set(user_id, newTimestampWhenFull);
+};
+
+/**
+ * Remove stamina do usuário.
+ * @param {string} user_id - ID do usuário.
+ * @param {number} value - Quantidade a remover.
+ */
+playerUtils.stamina.remove = async function(user_id, value) {
+  const currentStamina = await playerUtils.stamina.get(user_id);
+  const newValue = currentStamina - (Number(value) || 0);
+  await playerUtils.stamina.subset(user_id, newValue);
+};
+
+/**
+ * Adiciona stamina ao usuário.
+ * @param {string} user_id - ID do usuário.
+ * @param {number} value - Quantidade a adicionar.
+ */
+playerUtils.stamina.add = async function(user_id, value) {
+  const currentStamina = await playerUtils.stamina.get(user_id);
+  const newValue = currentStamina + (Number(value) || 0);
+  await playerUtils.stamina.subset(user_id, newValue);
+};
+
+module.exports = playerUtils;

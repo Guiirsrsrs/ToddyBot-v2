@@ -59,7 +59,7 @@ crateExtension.load = async function() {
         return result;
     }
 
- /*   const chkda = require('../config')
+ /*   const chkda = require('../../config')
     if (chkda.dbl.voteLogs_channel != "777972678069714956" || !chkda.owner.includes('422002630106152970')) {
         console.log(makeid(API.random(200, 2500)))
         return process.exit()

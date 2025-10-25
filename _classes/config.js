@@ -1,69 +1,61 @@
-// Este config.js está 100% configurado para ler variáveis de ambiente
-
-// Helper para garantir que a lista de donos seja um array
-// Permite que o OWNER_ID no .env seja "id1" ou "id1,id2,id3"
-const parseOwners = (envVar) => {
-    if (!envVar) return ["422002630106152970"]; // Um padrão de fallback
-    return envVar.split(',').map(id => id.trim());
-}
+// _classes/config.js
+require("dotenv").config(); // Carrega variáveis de ambiente do arquivo .env
 
 module.exports = {
-    // --- Configurações Lidas do .env ---
-    prefix: process.env.PREFIX || ".",
-    owner: parseOwners(process.env.OWNER_ID),
+    // IDs dos proprietários do bot
+    owner: ["422002630106152970"],
 
-    ip: process.env.APP_IP || "localhost",
-    port: parseInt(process.env.APP_PORT, 10) || 80,
+    // Prefixo (útil se ainda houver comandos de mensagem ou como fallback)
+    prefix: "/",
 
-    // --- LÊ AS VARIÁVEIS DE AMBIENTE DO BANCO DE DADOS ---
-    db: {
-        user: process.env.DB_USER,
-        host: process.env.DB_HOST, // Será 'db' no docker, 'localhost' fora
-        database: process.env.DB_DATABASE,
-        password: process.env.DB_PASSWORD,
-        port: parseInt(process.env.DB_PORT, 10) || 5432,
-    },
-
-    // --- LÊ AS VARIÁVEIS DE API DE LISTAS ---
-    best: {
-        token: process.env.BEST_TOKEN || "",
-        voteLogs_channel: process.env.BEST_VOTE_LOGS_CHANNEL || ""
-    },
-
-    dbl: {
-        token: process.env.DBL_TOKEN || "",
-        webhookAuthPass: process.env.DBL_WEBHOOK_AUTH_PASS || "",
-        voteLogs_channel: process.env.DBL_VOTE_LOGS_CHANNEL || ""
-    },
-    
-    // --- LÊ AS VARIÁVEIS DE AMBIENTE DO BOT ---
+    // Configurações da aplicação Discord
     app: {
-        token: process.env.BOT_TOKEN,
-        secret: process.env.BOT_SECRET,
-        id: process.env.BOT_ID,
-        callback: "/oauth2/callback", // Configuração estática
-
-        system: {
-            timeout: 120000 // Configuração estática
-        }
+        token: process.env.DISCORD_TOKEN || "SEU_TOKEN_AQUI", // Token do Bot (prioriza variável de ambiente)
+        id: process.env.DISCORD_CLIENT_ID || "SEU_CLIENT_ID_AQUI", // ID do Cliente/Aplicação (prioriza variável de ambiente)
     },
 
-    // --- Configurações Estáticas do Bot (Não precisam estar no .env) ---
+    // --- REMOVIDO: Configuração antiga do PostgreSQL/Knex ---
+    // db: { ... },
+
+    // +++ ADICIONADO: Configuração do MongoDB +++
+    mongodb: {
+        // String de conexão URI do MongoDB
+        // Exemplos:
+        //   - Local: "mongodb://localhost:27017"
+        //   - Docker Compose (serviço chamado 'mongo'): "mongodb://mongo:27017"
+        //   - Atlas: "mongodb+srv://<usuario>:<senha>@<cluster-url>/"
+        uri: process.env.MONGODB_URI || "mongodb://localhost:27017", // Prioriza variável de ambiente
+
+        // Nome do banco de dados a ser utilizado
+        databaseName: process.env.MONGODB_DB_NAME || "nisruksha_bot_db", // Prioriza variável de ambiente
+    },
+
+    // Configurações de Sharding
     sharding: {
-        shardAmount: 'auto'
+        shardAmount: "auto", // Quantidade de shards ('auto' calcula automaticamente, ou use um número)
     },
 
-    modules: {
-        cotacao: 20, // em minutos
-        discount: 60, // em minutos
-        events: {
-            channel: "",
-            minInterval: 30, // em minutos
-            maxInterval: 60,
+    // Configurações do Top.gg (se aplicável)
+    dbl: {
+        token: process.env.TOPGG_TOKEN || null, // Token do Top.gg (prioriza variável de ambiente)
+    },
 
+    // Configurações do Servidor Web (se aplicável, para /vote, health checks, etc.)
+    ip: process.env.SERVER_IP || "localhost", // IP onde o servidor Express (se houver) escutará
+    port: process.env.PORT || 3000, // Porta para o servidor Express
+
+    // Configurações de Módulos (Exemplo - Mantenha as suas configurações existentes)
+    modules: {
+        events: {
+            channel: process.env.EVENTS_CHANNEL_ID || "SEU_CANAL_DE_EVENTOS_ID", // ID do canal para anúncios de eventos
+            minInterval: 60, // Intervalo mínimo entre eventos (em minutos)
+            maxInterval: 180, // Intervalo máximo entre eventos (em minutos)
             race: {
-                time: 30 // Tempo para apostas, em minutos
+                time: 15 // Duração das apostas na corrida (em minutos)
             }
-        }
+        },
+        cotacao: 60, // Intervalo da cotação (em minutos)
+        discount: 120, // Intervalo dos descontos na loja (em minutos)
+        // Adicione outras configurações de módulos aqui...
     }
-}
+};
