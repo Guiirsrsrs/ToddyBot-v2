@@ -1,22 +1,24 @@
 // _classes/api/index.js
 
-const { prefix, owner, token, ip, app } = require("../config"); // Ajustado para ../config
-const version = require('../../package.json').version; // Ajustado para ../../package.json
-const DatabaseManager = require('../manager/DatabaseManager'); // Ajustado
-const dbManagerInstance = new DatabaseManager();
+// --- Core Imports ---
+const { prefix, owner, token, ip, app } = require("../config"); // Caminho: ../config
+const version = require('../../package.json').version; // Caminho: ../../package.json
+const DatabaseManager = require('../manager/DatabaseManager'); // Caminho: ../manager/DatabaseManager
+const dbManagerInstance = new DatabaseManager(); // Instância do Manager
+const discordJS = require('discord.js'); // Importa o discord.js inteiro
 
-// Import Builders from discord.js
+// --- Discord.js Builders & Components ---
 const {
-    EmbedBuilder, ButtonBuilder, ActionRowBuilder, SelectMenuBuilder, ButtonStyle, Collection // Adicionado Collection
-} = require('discord.js');
+    EmbedBuilder, ButtonBuilder, ActionRowBuilder, SelectMenuBuilder, ButtonStyle, Collection
+} = discordJS; // Extrai builders do discordJS
 
-// Import Utility Modules
+// --- Utility Modules Imports ---
 const botUtils = require('./utils/botUtils');
 const dbUtils = require('./utils/dbUtils');
 const discordUtils = require('./utils/discordUtils');
 const formatUtils = require('./utils/formatUtils');
 
-// Import System Modules (adjust path if you moved the modules folder)
+// --- System Modules Imports ---
 const modules = {
     badges: require('./modules/badges'),
     cacheLists: require('./modules/cacheLists'),
@@ -33,10 +35,12 @@ const modules = {
     shopExtension: require('./modules/shopExtension'),
     siteExtension: require('./modules/siteExtension'),
     townExtension: require('./modules/townExtension')
-    // Adicione mais módulos conforme necessário
+    // Adicione outros módulos aqui se necessário
 };
 
-const API = {
+// --- API Object Construction ---
+// Usar 'let' permite modificar/adicionar propriedades depois (como client)
+let API = {
     // --- Core Info & Config ---
     prefix, owner, token, ip, app, version, id: app.id,
 
@@ -55,21 +59,21 @@ const API = {
     mastery: { name: 'pontos de maestria', emoji: '🔰' },
 
     // --- Core Components ---
-    DatabaseManager: dbManagerInstance, // Use instance
-    db: require('../db'), // Knex instance - Ajustado
-    client: null, // To be set by NisrukshaClient
-    Discord: require('discord.js'), // Export discord.js itself if needed, but prefer builders
+    DatabaseManager: dbManagerInstance, // Instância do DB Manager (MongoDB)
+    // db: require('../db'), // Conexão MongoDB gerenciada via connectDB() - Não exportar diretamente?
+    client: null, // Será definido pelo NisrukshaClient
+    Discord: discordJS, // Exporta o discord.js inteiro para compatibilidade/acesso a tipos
 
     // --- Discord.js Builders & Components ---
     EmbedBuilder, ButtonBuilder, ActionRowBuilder, SelectMenuBuilder, ButtonStyle, Collection,
 
-    // --- Utility Functions (Grouped) ---
+    // --- Utility Functions (Grouped & Direct Access) ---
     utils: {
         bot: botUtils,
         db: dbUtils,
         discord: discordUtils,
         format: formatUtils,
-        // Add direct access to common utils for convenience?
+        // Atalhos comuns (mantidos para conveniência)
         ms: formatUtils.ms,
         ms2: formatUtils.ms2,
         format: formatUtils.format,
@@ -77,25 +81,48 @@ const API = {
         toNumber: formatUtils.toNumber,
         getFormatedDate: formatUtils.getFormatedDate,
         random: botUtils.random,
-        // ... add others as needed
+        clone: botUtils.clone,
+        sendError: discordUtils.sendError,
+        createButton: discordUtils.createButton,
+        createMenu: discordUtils.createMenu,
+        rowComponents: discordUtils.rowComponents,
+        // Adicionar editOrReply aqui também?
+        editOrReply: discordUtils.editOrReply, // Certifique-se que foi exportado em discordUtils.js
     },
 
     // --- System Modules ---
-    ...modules,
+    ...modules, // Espalha todos os módulos importados (API.eco, API.company, etc.)
 
-    // --- Funções que precisam do contexto 'API' ---
-    // Pass 'API' para getBotInfoProperties ou refatorar para importar dependências diretamente
-    getBotInfoProperties: () => botUtils.getBotInfoProperties(API),
-    // Pass client para setCompanieInfo
-    setCompanieInfo: (user_id, company, string, value) => dbUtils.setCompanieInfo(user_id, company, string, value, API.client),
+    // --- Funções Específicas com Contexto (Wrappers) ---
+    // Wrapper para getBotInfoProperties
+    getBotInfoProperties: async () => { // Tornar async se botUtils.getBotInfoProperties for async
+        // Coleta o estado atual necessário
+        const currentState = {
+            lastsave: API.lastsave,
+            cmdsexec: API.cmdsexec,
+            playerscmds: API.playerscmds,
+            cacheLists: API.cacheLists, // Passa o módulo inteiro
+            version: API.version
+        };
+        // Chama a função passando o client e o estado
+        // Garante que API.client esteja definido antes de chamar
+        if (!API.client) {
+            console.warn("[API.getBotInfoProperties] Chamado antes do API.client ser definido.");
+            // Retornar um embed padrão ou lançar erro?
+            return new EmbedBuilder().setTitle("Bot Status").setDescription("Aguardando inicialização...");
+        }
+        return await botUtils.getBotInfoProperties(API.client, currentState); // Usa await
+    },
+    // Wrapper para setCompanieInfo
+    setCompanieInfo: (user_id, company_id, field, value) => {
+        // Chama a função passando o client
+        // Garante que API.client esteja definido
+        if (!API.client) {
+             console.warn("[API.setCompanieInfo] Chamado antes do API.client ser definido. Erro pode não ser emitido.");
+        }
+        return dbUtils.setCompanieInfo(user_id, company_id, field, value, API.client);
+    },
 
-    // --- Manter funções auxiliares de alto nível que usam outros módulos ---
-    // Exemplo: Se createButton precisasse de algo do eco module (improvável)
-    createButton: discordUtils.createButton,
-    createMenu: discordUtils.createMenu,
-    rowComponents: discordUtils.rowComponents,
-    sendError: discordUtils.sendError,
-    clone: botUtils.clone // Expor clone diretamente
 };
 
 module.exports = API;

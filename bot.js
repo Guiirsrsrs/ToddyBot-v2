@@ -17,6 +17,6 @@ manager.connect()
         console.error('[Bot] Falha fatal ao iniciar sharding:', err);
         process.exit(1);
     });
-
+console.log("Token lido do .env:", process.env.DISCORD_TOKEN ? `Encontrado (termina com ...${process.env.DISCORD_TOKEN.slice(-5)})` : "NÃO ENCONTRADO!".red);
 // Opcional: Manter o processo principal vivo ou adicionar mais lógica aqui
 // (Ex: Um servidor web para health checks)

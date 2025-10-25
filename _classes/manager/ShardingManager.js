@@ -9,9 +9,10 @@ class NisrukshaShardManager extends ShardingManager {
     constructor(options = {}) {
         // Caminho para o arquivo principal do bot (index.js ou bot.js)
         const mainBotFile = path.join(__dirname, '..', '..', 'index.js'); // Ajuste se seu arquivo principal for outro
-
-        // Determina o número de shards: 'auto' ou valor da config (padrão 'auto')
         const totalShards = options.sharding?.shardAmount > 0 ? options.sharding.shardAmount : 'auto';
+        const tokenFromOptions = options.app?.token; // Token vindo da config
+
+        console.log("[ShardingManager DEBUG] Token recebido via options:", tokenFromOptions ? `Encontrado (termina com ...${tokenFromOptions.slice(-5)})` : "NÃO RECEBIDO!".red);
 
         super(mainBotFile, {
             totalShards: totalShards,
@@ -21,6 +22,11 @@ class NisrukshaShardManager extends ShardingManager {
             // shardArgs: [], // Argumentos extras para passar para cada shard
             // execArgv: [], // Argumentos extras para passar para o processo node de cada shard
         });
+
+        if (!tokenFromOptions) { // Verifica se o token realmente chegou
+            console.error('[ShardingManager] ERRO CRÍTICO: Token não fornecido nas opções! Verifique config.js e .env.'.red);
+            process.exit(1);
+        }
 
         if (!options.app?.token) {
             console.error('[ShardingManager] ERRO: Token não encontrado nas opções!'.red);

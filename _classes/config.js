@@ -24,7 +24,7 @@ module.exports = {
         //   - Local: "mongodb://localhost:27017"
         //   - Docker Compose (serviço chamado 'mongo'): "mongodb://mongo:27017"
         //   - Atlas: "mongodb+srv://<usuario>:<senha>@<cluster-url>/"
-        uri: process.env.MONGODB_URI || "mongodb://localhost:27017", // Prioriza variável de ambiente
+        uri: process.env.MONGODB_URI || "mongodb+srv://guiifarias34_db_user:x0rI5uRZxsYMQcqf@cluster0.nvdchx6.mongodb.net/?appName=Cluster0", // Prioriza variável de ambiente
 
         // Nome do banco de dados a ser utilizado
         databaseName: process.env.MONGODB_DB_NAME || "nisruksha_bot_db", // Prioriza variável de ambiente
