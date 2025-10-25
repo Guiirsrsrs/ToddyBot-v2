@@ -12,7 +12,7 @@ class DatabaseManager {
     /**
      * Garante que a conexão com o banco de dados esteja estabelecida e retorna a instância.
      * @private
-     * @returns {Promise<Db>} Instância do banco de dados MongoDB.
+     * @returns {Promise<import('mongodb').Db>} Instância do banco de dados MongoDB.
      */
     async _getDb() {
         if (this.db) {
