@@ -15,7 +15,7 @@ module.exports = {
         const client = API.client;
         //const Discord = API.Discord; // Not needed anymore
 
-        DatabaseManager.set(guild.id, 'servers', 'lastcmd', 0, 'server_id');
+        API.client.dbset(guild.id, 'servers', 'lastcmd', 0, 'server_id');
 
         let owner = { id: 'N/A', tag: 'N/A'}; // Default values
         try {

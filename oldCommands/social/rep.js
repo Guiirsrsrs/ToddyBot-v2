@@ -40,7 +40,7 @@ module.exports = {
         
         API.playerUtils.cooldown.set(interaction.user.id, "rep", 43200)
 
-        DatabaseManager.increment(member.id, "players", "reps", 1)
+        API.client.dbincrement(member.id, "players", "reps", 1)
 
         await interaction.reply({ content: 'Você deu **+1 REP** para **' + member.tag + '**!' })
 

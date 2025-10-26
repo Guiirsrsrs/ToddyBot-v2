@@ -68,8 +68,8 @@ itemExtension.give = async function(interaction, itemsToGive) {
 
     try {
         // 1. Obter dados da mochila e inventário atual
-        const utilsDoc = await DatabaseManager.findOne('players_utils', { user_id: user_id }, { projection: { backpack: 1 } });
-        const storageDoc = await DatabaseManager.findOne('storage', { user_id: user_id }) || { user_id: user_id }; // Documento padrão se não existir
+        const utilsDoc = await API.client.db.findOne('players_utils', { user_id: user_id }, { projection: { backpack: 1 } });
+        const storageDoc = await API.client.db.findOne('storage', { user_id: user_id }) || { user_id: user_id }; // Documento padrão se não existir
 
         const backpackId = utilsDoc?.backpack || 0; // ID da mochila ou padrão
         const backpack = API.shopExtension.getProduct(backpackId) || { customitem: { itensmax: 100, typesmax: 10 } }; // Mochila padrão
@@ -134,7 +134,7 @@ itemExtension.give = async function(interaction, itemsToGive) {
 
         // 3. Executar a atualização no banco de dados (se houver algo para atualizar)
         if (Object.keys(updates).length > 0 && (updates.$inc && Object.keys(updates.$inc).length > 0)) {
-             await DatabaseManager.updateOne('storage', { user_id: user_id }, updates, { upsert: true });
+             await API.client.db.updateOne('storage', { user_id: user_id }, updates, { upsert: true });
         } else {
              console.log(`[ItemExt.give] Nenhuma atualização necessária no DB para ${user_id}.`);
         }
@@ -187,7 +187,7 @@ itemExtension.add = async function(user_id, itemName, value) {
     const itemKey = normalizeItemNameForKey(itemName);
     const amount = Math.max(0, Number(value) || 0); // Garante positivo e número
     if (!itemKey || amount <= 0) return; // Não faz nada se inválido
-    await DatabaseManager.increment(user_id, "storage", itemKey, amount, 'user_id');
+    await API.client.dbincrement(user_id, "storage", itemKey, amount, 'user_id');
 };
 
 /**
@@ -200,7 +200,7 @@ itemExtension.set = async function(user_id, itemName, value) {
     const itemKey = normalizeItemNameForKey(itemName);
     const amount = Math.max(0, Number(value) || 0); // Garante >= 0 e número
     if (!itemKey) return;
-    await DatabaseManager.set(user_id, "storage", itemKey, amount, 'user_id');
+    await API.client.dbset(user_id, "storage", itemKey, amount, 'user_id');
 };
 
 // REMOVIDO: itemExtension.loadToStorage - Não aplicável ao MongoDB
@@ -212,7 +212,7 @@ itemExtension.set = async function(user_id, itemName, value) {
  */
 itemExtension.getChips = async function(user_id) {
     const shopObj = API.shopExtension.getShopObj(); // Lista de todos os produtos
-    const storageDoc = await DatabaseManager.findOne('storage', { user_id: user_id });
+    const storageDoc = await API.client.db.findOne('storage', { user_id: user_id });
     let ownedChips = [];
 
     if (!shopObj || !storageDoc) return []; // Retorna vazio se não houver loja ou storage
@@ -241,7 +241,7 @@ itemExtension.getChips = async function(user_id) {
  */
 itemExtension.getEquippedChips = async function(user_id) {
   try {
-      const machineDoc = await DatabaseManager.findOne('machines', { user_id: user_id }, { projection: { slots: 1 } });
+      const machineDoc = await API.client.db.findOne('machines', { user_id: user_id }, { projection: { slots: 1 } });
       const chips = machineDoc?.slots || []; // Pega o array 'slots' ou um array vazio
 
       // Calcula durabilitypercent para cada chip (se necessário)
@@ -286,13 +286,13 @@ itemExtension.unequipChip = async function(user_id, slotIndex) {
     // Atualiza o array 'slots' no documento 'machines'
     const filter = { user_id: user_id };
     const update = currentChips.length > 0 ? { $set: { slots: currentChips } } : { $unset: { slots: 1 } }; // Remove o campo se ficar vazio
-    await DatabaseManager.updateOne('machines', filter, update);
+    await API.client.db.updateOne('machines', filter, update);
 
     // Adiciona de volta ao storage SE a durabilidade estiver 100% (ou outra condição?)
     // A lógica original verificava == 100, mantendo isso:
     if (chipToUnequip.durabilitypercent === 100) {
         const chipKey = `piece:${chipToUnequip.id}`;
-        await DatabaseManager.increment(user_id, 'storage', chipKey, 1, 'user_id');
+        await API.client.dbincrement(user_id, 'storage', chipKey, 1, 'user_id');
     } else {
          console.log(`[ItemExt] Chip ${chipToUnequip.id} desequipado por ${user_id} com durabilidade < 100%. Não retornou ao storage.`);
     }
@@ -330,11 +330,11 @@ itemExtension.unequipAllChips = async function(user_id) {
     // Limpa o array 'slots' no documento 'machines'
     const filter = { user_id: user_id };
     const update = { $unset: { slots: 1 } }; // Remove o campo 'slots'
-    await DatabaseManager.updateOne('machines', filter, update);
+    await API.client.db.updateOne('machines', filter, update);
 
     // Atualiza o storage (se houver chips para retornar)
     if (storageUpdates.$inc && Object.keys(storageUpdates.$inc).length > 0) {
-         await DatabaseManager.updateOne('storage', filter, storageUpdates, { upsert: true }); // Upsert para garantir que o doc storage exista
+         await API.client.db.updateOne('storage', filter, storageUpdates, { upsert: true }); // Upsert para garantir que o doc storage exista
     }
 
     console.log(`[ItemExt] Todos os chips foram desequipados para ${user_id}.`);
@@ -357,7 +357,7 @@ itemExtension.removeChipsDurability = async function(user_id, amountToRemove) {
   if (amountToRemove <= 0) return true; // Nada a remover
 
   try {
-    const machineDoc = await DatabaseManager.findOne('machines', { user_id: user_id }, { projection: { slots: 1 } });
+    const machineDoc = await API.client.db.findOne('machines', { user_id: user_id }, { projection: { slots: 1 } });
     let currentChips = machineDoc?.slots || [];
     if (currentChips.length === 0) return true; // Nenhum chip equipado
 
@@ -378,7 +378,7 @@ itemExtension.removeChipsDurability = async function(user_id, amountToRemove) {
     if (changed || updatedChips.length !== currentChips.length) {
          const filter = { user_id: user_id };
          const update = updatedChips.length > 0 ? { $set: { slots: updatedChips } } : { $unset: { slots: 1 } }; // Remove o campo se vazio
-         await DatabaseManager.updateOne('machines', filter, update);
+         await API.client.db.updateOne('machines', filter, update);
          console.log(`[ItemExt] Durabilidade de chips removida (${amountToRemove}) para ${user_id}.`);
     }
 
@@ -399,8 +399,8 @@ itemExtension.removeChipsDurability = async function(user_id, amountToRemove) {
  */
 itemExtension.givePiece = async function(user_id, piece) {
    try {
-       const machineDoc = await DatabaseManager.findOne('machines', { user_id: user_id }, { projection: { slots: 1, level: 1 } }); // Pega level também
-       const playerDoc = await DatabaseManager.findOne('players', { user_id: user_id }, { projection: { mvp: 1 } }); // Pega mvp status
+       const machineDoc = await API.client.db.findOne('machines', { user_id: user_id }, { projection: { slots: 1, level: 1 } }); // Pega level também
+       const playerDoc = await API.client.db.findOne('players', { user_id: user_id }, { projection: { mvp: 1 } }); // Pega mvp status
 
        if (!machineDoc) return false; // Precisa ter registro em machines
 
@@ -418,7 +418,7 @@ itemExtension.givePiece = async function(user_id, piece) {
        // Adiciona a peça ao array de slots usando $push
        const filter = { user_id: user_id };
        const update = { $push: { slots: piece } };
-       await DatabaseManager.updateOne('machines', filter, update, { upsert: true }); // Upsert caso 'machines' não exista
+       await API.client.db.updateOne('machines', filter, update, { upsert: true }); // Upsert caso 'machines' não exista
        console.log(`[ItemExt] Peça ${piece.id} equipada para ${user_id}.`);
        return true;
 
@@ -455,7 +455,7 @@ itemExtension.translateRarity = function(rarity) {
  */
 itemExtension.getInv = async function(user_id, filtered = false, lengthOnly = false) {
     try {
-        const storageDoc = await DatabaseManager.findOne('storage', { user_id: user_id });
+        const storageDoc = await API.client.db.findOne('storage', { user_id: user_id });
         const masterItemList = itemExtension.getObj()?.drops || []; // Pega a lista mestra de drops/itens
         let inventoryItems = [];
 

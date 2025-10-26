@@ -165,7 +165,7 @@ const remembermap = new Map(); // { user_id: { memberid, energia: { channelid, a
             // Busca o documento globals pelo ID do bot
             const filter = { _id: API.id }; // Assumindo que API.id é o ID correto do bot no DB
             const options = { projection: { remember: 1 } }; // Pega apenas o campo remember
-            const globalDoc = await DatabaseManager.findOne('globals', filter, options);
+            const globalDoc = await API.client.db.findOne('globals', filter, options);
 
             const remindersFromDb = globalDoc?.remember; // Deve ser um array de objetos
 
@@ -249,7 +249,7 @@ const remembermap = new Map(); // { user_id: { memberid, energia: { channelid, a
             const remindersArray = Array.from(remembermap.values());
             const filter = { _id: API.id }; // Filtro pelo ID do bot
             const update = { $set: { remember: remindersArray } }; // Define o campo 'remember' com o array
-            await DatabaseManager.updateOne('globals', filter, update, { upsert: true }); // Cria o doc globals se não existir
+            await API.client.db.updateOne('globals', filter, update, { upsert: true }); // Cria o doc globals se não existir
             // console.log(`[Remember] ${remindersArray.length} lembretes salvos no banco de dados.`); // Log opcional
         } catch (error) {
              console.error('[ERRO][Remember] Falha ao salvar lembretes no banco de dados:', error);

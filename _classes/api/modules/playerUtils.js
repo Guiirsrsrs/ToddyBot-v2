@@ -21,13 +21,13 @@ playerUtils.execExp = async function(interaction, xpp, pure) {
     if (!interaction?.user || xpp == null) return 0; // Verifica interaction e user
 
     const userId = interaction.user.id;
-    const machinesDoc = await DatabaseManager.findOne('machines', { user_id: userId });
+    const machinesDoc = await API.client.db.findOne('machines', { user_id: userId });
 
     // Se o usuário não tem registro em 'machines', cria um padrão ou retorna
     if (!machinesDoc) {
         console.warn(`[PlayerUtils] Documento 'machines' não encontrado para ${userId}. Não foi possível adicionar XP.`);
         // Opcional: Criar um documento padrão aqui se necessário
-        // await DatabaseManager.insertOne('machines', { user_id: userId, level: 1, xp: 0, totalxp: 0, machine: 0, ... });
+        // await API.client.dbinsertOne('machines', { user_id: userId, level: 1, xp: 0, totalxp: 0, machine: 0, ... });
         return 0;
     }
 
@@ -56,7 +56,7 @@ playerUtils.execExp = async function(interaction, xpp, pure) {
     }
 
     // Atualiza o banco de dados
-    await DatabaseManager.updateOne('machines', { user_id: userId }, updates);
+    await API.client.db.updateOne('machines', { user_id: userId }, updates);
 
     // Lógica de Level Up (Mensagem, Recompensas)
     if (leveledUp) {
@@ -127,7 +127,7 @@ playerUtils.cooldown.get = async function(user_id, cooldownName) {
 
     // Busca apenas o campo específico do cooldown
     const projection = { projection: { [cooldownName]: 1 } };
-    const doc = await DatabaseManager.findOne('cooldowns', { user_id: user_id }, projection);
+    const doc = await API.client.db.findOne('cooldowns', { user_id: user_id }, projection);
 
     const cooldownData = doc?.[cooldownName]; // Acessa o campo dinamicamente
 
@@ -155,7 +155,7 @@ playerUtils.cooldown.set = async function(user_id, cooldownName, durationSeconds
     const filter = { user_id: user_id };
     // Armazena o timestamp de início e a duração
     const update = { $set: { [cooldownName]: { timestamp: Date.now(), duration: value } } };
-    await DatabaseManager.updateOne('cooldowns', filter, update, { upsert: true });
+    await API.client.db.updateOne('cooldowns', filter, update, { upsert: true });
 };
 
 /**
@@ -212,7 +212,7 @@ playerUtils.cooldown.message = async function(interaction, cooldownName, actionT
  * @param {number} value - Quantidade a adicionar.
  */
 playerUtils.addMastery = async function(user_id, value) {
-  await DatabaseManager.increment(user_id, 'players', 'mastery', value, 'user_id');
+  await API.client.dbincrement(user_id, 'players', 'mastery', value, 'user_id');
 };
 
 /**
@@ -221,7 +221,7 @@ playerUtils.addMastery = async function(user_id, value) {
  * @returns {Promise<number>} Pontos de maestria (padrão 0).
  */
 playerUtils.getMastery = async function (user_id) {
-  const doc = await DatabaseManager.findOne('players', { user_id: user_id }, { projection: { mastery: 1 } });
+  const doc = await API.client.db.findOne('players', { user_id: user_id }, { projection: { mastery: 1 } });
   return doc?.mastery || 0;
 };
 
@@ -237,7 +237,7 @@ const STAMINA_REGEN_INTERVAL_SECONDS = 30; // A cada 30 segundos regenera 1 pont
  * @returns {Promise<number>} Stamina atual (0 a MAX_STAMINA).
  */
 playerUtils.stamina.get = async function(user_id) {
-    const doc = await DatabaseManager.findOne('players', { user_id: user_id }, { projection: { staminaTimestamp: 1 } });
+    const doc = await API.client.db.findOne('players', { user_id: user_id }, { projection: { staminaTimestamp: 1 } });
     const timestampWhenFull = doc?.staminaTimestamp || 0; // Timestamp (ms) de quando a stamina estará cheia
 
     const now = Date.now();
@@ -261,7 +261,7 @@ playerUtils.stamina.get = async function(user_id) {
  * @returns {Promise<number>} Tempo restante em ms (0 se já estiver cheia).
  */
 playerUtils.stamina.time = async function(user_id) {
-    const doc = await DatabaseManager.findOne('players', { user_id: user_id }, { projection: { staminaTimestamp: 1 } });
+    const doc = await API.client.db.findOne('players', { user_id: user_id }, { projection: { staminaTimestamp: 1 } });
     const timestampWhenFull = doc?.staminaTimestamp || 0;
 
     const now = Date.now();
@@ -278,7 +278,7 @@ playerUtils.stamina.time = async function(user_id) {
  */
 playerUtils.stamina.set = async function(user_id, timestampMs) {
     const value = Number(timestampMs) || 0;
-    await DatabaseManager.set(user_id, 'players', 'staminaTimestamp', value, 'user_id');
+    await API.client.dbset(user_id, 'players', 'staminaTimestamp', value, 'user_id');
 };
 
 /**

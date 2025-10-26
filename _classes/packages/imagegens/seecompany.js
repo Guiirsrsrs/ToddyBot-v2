@@ -1,4 +1,4 @@
-const API = require("../../api.js");
+const API = require("../../api/index");
 const ImageCharts = require('image-charts');
 let bg
 

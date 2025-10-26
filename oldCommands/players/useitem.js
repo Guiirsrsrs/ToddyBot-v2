@@ -33,7 +33,7 @@ module.exports = {
             return;
         }
         
-        const obj2 = await DatabaseManager.get(interaction.user.id, 'storage')
+        const obj2 = await API.client.dbget(interaction.user.id, 'storage')
         if (obj2[drop.name.replace(/"/g, '')] <= 0) {
             const embedtemp = await API.sendError(interaction, `Você não possui ${drop.icon} \`${drop.displayname}\` na sua mochila para usar!`)
             await interaction.reply({ embeds: [embedtemp]})
@@ -75,7 +75,7 @@ module.exports = {
             embed.fields = [];
             b.deferUpdate()
 
-            const obj2 = await DatabaseManager.get(interaction.user.id, 'storage')
+            const obj2 = await API.client.dbget(interaction.user.id, 'storage')
             if (obj2[drop.name.replace(/"/g, '')] <= 0) {
                 embed.setColor('#a60000');
                 embed.addField('❌ Uso cancelado', `
@@ -122,7 +122,7 @@ module.exports = {
 
                             let profundidade = await API.maqExtension.getDepth(interaction.user.id)
 
-                            let playerobj = await DatabaseManager.get(interaction.user.id, 'machines');
+                            let playerobj = await API.client.dbget(interaction.user.id, 'machines');
                             let maqid = playerobj.machine;
                             const maq1 = API.shopExtension.getProduct(maqid);
                             const maq = API.clone(maq1);
@@ -161,7 +161,7 @@ module.exports = {
                             
                             let armazemmax2 = await API.maqExtension.storage.getMax(interaction.user.id);
                             embed2.fields = [];
-                            const obj6 = await DatabaseManager.get(interaction.user.id, "machines");
+                            const obj6 = await API.client.dbget(interaction.user.id, "machines");
                             const arsize = await API.maqExtension.storage.getSize(interaction.user.id);
 
                             await embed2.setDescription(`Minerador: ${interaction.user}`);

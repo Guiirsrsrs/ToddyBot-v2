@@ -171,7 +171,7 @@ module.exports = {
                 
                 async function applyBet(rd) {
 
-                    const globalobj = await DatabaseManager.get(API.id, 'globals');
+                    const globalobj = await API.client.dbget(API.id, 'globals');
                     
                     const bets = globalobj.bets
 
@@ -186,7 +186,7 @@ module.exports = {
                     jsonbet.flip.unshift(rd)
                     jsonbet.flip = jsonbet.flip.slice(0, 100)
             
-                    DatabaseManager.set(API.id, 'globals', 'bets', jsonbet)
+                    API.client.dbset(API.id, 'globals', 'bets', jsonbet)
 
                     let chancemedia = 0
             

@@ -13,8 +13,8 @@ module.exports = {
         const Discord = API.Discord;
         const client = API.client;
         
-        let pobj = await DatabaseManager.get(interaction.user.id, 'players')
-        let pobj2 = await DatabaseManager.get(interaction.user.id, 'machines')
+        let pobj = await API.client.dbget(interaction.user.id, 'players')
+        let pobj2 = await API.client.dbget(interaction.user.id, 'machines')
 
         if (!pobj.rod) {
             const embedtemp = await API.sendError(interaction, `Você precisa ter uma vara de pesca para poder iniciar uma pesca!\nCompre uma vara de pesca utilizando \`/pegarvara\``)
@@ -278,14 +278,14 @@ module.exports = {
 
                 await API.playerUtils.stamina.remove(interaction.user.id, gastosta);
 
-                pobj = await DatabaseManager.get(interaction.user.id, 'players')
+                pobj = await API.client.dbget(interaction.user.id, 'players')
 
                 stamina = await API.playerUtils.stamina.get(interaction.user.id)
 
                 if (header.stars > 0 ) API.company.stars.add(interaction.user.id, company.company_id, { score: header.stars })
 
                 embed.fields = [];
-                const obj6 = await DatabaseManager.get(interaction.user.id, "machines");
+                const obj6 = await API.client.dbget(interaction.user.id, "machines");
                 let sta2 = await API.playerUtils.stamina.get(interaction.user.id);
                 embed.addField(`${pobj.rod.icon} ${pobj.rod.name} \`${API.company.jobs.formatStars(pobj.rod.stars)}\``, `Gasto: **${pobj.rod.sta} 🔸**\nProfundidade: **${pobj.rod.profundidade}m**\nPara dar upgrade utilize \`/uparvara\``)
                 embed.addField(`💦 Informações da pesca`, `Nível: ${obj6.level}\nXP: ${obj6.xp}/${obj6.level*1980} (${Math.round(100*obj6.xp/(obj6.level*1980))}%) \`(+${xp} XP)\` ${header.stars > 0 ? `**(+${header.stars} ⭐)**`:''}\nEstamina: ${stamina < 1 ? 0 : stamina}/1000 🔸 \`(-${gastosta})\``)

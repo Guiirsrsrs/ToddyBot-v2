@@ -104,8 +104,8 @@ module.exports = {
             }
             
             API.setCompanieInfo(interaction.user.id, company2.company_id, 'workers', list)
-            DatabaseManager.set(member.id, 'players', 'company', null)
-            DatabaseManager.set(member.id, 'players', 'companyact', null)
+            API.client.dbset(member.id, 'players', 'company', null)
+            API.client.dbset(member.id, 'players', 'companyact', null)
             
         });
         

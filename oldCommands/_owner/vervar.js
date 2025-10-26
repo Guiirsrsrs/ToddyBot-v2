@@ -38,7 +38,7 @@ module.exports = {
         try {
 
             const text =  `SELECT * FROM ${tabela} WHERE ${va} = $1;`, values = [v.id]
-            let res = await DatabaseManager.query(text, values);
+            let res = await API.client.dbquery(text, values);
             embed.setDescription(`✅ Dados de ${v} em \`${tabela}\`\n\`\`\`js\n${JSON.stringify(res.rows[0], null, '\t').slice(0, 1500)}\`\`\``)
             .setColor('#32a893')
 

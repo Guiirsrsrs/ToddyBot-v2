@@ -41,9 +41,9 @@ module.exports = {
 
 async function checkAll(API, interaction, { req, mastery: maestria = 0, companytype }) {
 
-    const pobj = await DatabaseManager.get(interaction.user.id, 'players')
-    const serverobj = await DatabaseManager.get(interaction.guild.id, 'servers', 'server_id');
-    const globalobj = await DatabaseManager.get(app.id, 'globals');
+    const pobj = await API.client.dbget(interaction.user.id, 'players')
+    const serverobj = await API.client.dbget(interaction.guild.id, 'servers', 'server_id');
+    const globalobj = await API.client.dbget(app.id, 'globals');
 
     const globalstatus = globalobj.status
     const globalman = globalobj.man
@@ -99,7 +99,7 @@ async function checkAll(API, interaction, { req, mastery: maestria = 0, companyt
 
     if (globalstatus == 0) {
         try {
-            const x = await API.client.guilds.cache.get('693150851396796446').members.fetch(interaction.user.id, { force: true, cache: true })
+            const x = await API.client.guilds.cache.get('1153704546351190158').members.fetch(interaction.user.id, { force: true, cache: true })
 
             if (!x) {
                 if (await limitedpatrao()) return true
@@ -150,8 +150,8 @@ async function checkAll(API, interaction, { req, mastery: maestria = 0, companyt
         .setDescription(`Seu **MVP** acaba de ter seu tempo expirado!\nPara adquirir **MVP** basta doar usando \`/doar\` e em seguida contatar o criador do bot\nPara conseguir cristais rapidamente você precisa doar para o bot e contatando o criador.\nPara entrar no servidor de suporte utilize \`/convite\``)
         .setAuthor(interaction.user.tag, interaction.user.displayAvatarURL({ format: 'png', dynamic: true, size: 1024 }))
         interaction.channel.send({ embeds: [embed], mention: true})
-        DatabaseManager.set(interaction.user.id, 'players', 'mvp', null)
-        if (pobj.perm == 3) DatabaseManager.set(interaction.user.id, 'players', 'perm', 1)
+        API.client.dbset(interaction.user.id, 'players', 'mvp', null)
+        if (pobj.perm == 3) API.client.dbset(interaction.user.id, 'players', 'perm', 1)
     }
     
     const check = await API.playerUtils.cooldown.check(interaction.user.id, "global");
@@ -169,10 +169,10 @@ async function checkAll(API, interaction, { req, mastery: maestria = 0, companyt
     API.playerUtils.cooldown.set(interaction.user.id, "global", Math.round((4500-(pobj.perm*500))/1000));
         
     API.cmdsexec++;
-    DatabaseManager.increment(app.id, 'globals', 'totalcmd', 1)
-    DatabaseManager.increment(interaction.user.id, 'players', 'cmdsexec', 1)
-    DatabaseManager.increment(interaction.guild.id, 'servers', 'cmdsexec', 1, 'server_id')
-    DatabaseManager.set(interaction.guild.id, 'servers', 'lastcmd', Date.now(), 'server_id')
+    API.client.dbincrement(app.id, 'globals', 'totalcmd', 1)
+    API.client.dbincrement(interaction.user.id, 'players', 'cmdsexec', 1)
+    API.client.dbincrement(interaction.guild.id, 'servers', 'cmdsexec', 1, 'server_id')
+    API.client.dbset(interaction.guild.id, 'servers', 'lastcmd', Date.now(), 'server_id')
 
     const check25 = await API.playerUtils.cooldown.check(interaction.user.id, "mastery");
     if (!check25) API.playerUtils.addMastery(interaction.user.id, maestria + 1)
@@ -230,11 +230,11 @@ async function checkAll(API, interaction, { req, mastery: maestria = 0, companyt
             return true;
         }
         let company;
-        let pobj = await DatabaseManager.get(interaction.user.id, 'players')
+        let pobj = await API.client.dbget(interaction.user.id, 'players')
         if (await API.company.check.isWorker(interaction.user.id)) {
             company = await API.company.get.companyById(pobj.company);
             if (!company) {
-                await DatabaseManager.set(interaction.user.id, 'players', 'company', null)
+                await API.client.dbset(interaction.user.id, 'players', 'company', null)
                 return true
             }
             if (company.type != companytype) {
@@ -245,7 +245,7 @@ async function checkAll(API, interaction, { req, mastery: maestria = 0, companyt
         } else {
             company = await API.company.get.companyByOwnerId(interaction.user.id);
             if (!company) {
-                await DatabaseManager.set(interaction.user.id, 'players', 'company', null)
+                await API.client.dbset(interaction.user.id, 'players', 'company', null)
                 return true
             }
             if (company.type != companytype) {

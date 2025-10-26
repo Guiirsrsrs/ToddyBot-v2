@@ -22,8 +22,8 @@ module.exports = {
         const Discord = API.Discord;
         const client = API.client;
 
-        let pobj = await DatabaseManager.get(interaction.user.id, 'players')
-        let pobj2 = await DatabaseManager.get(interaction.user.id, 'machines')
+        let pobj = await API.client.dbget(interaction.user.id, 'players')
+        let pobj2 = await API.client.dbget(interaction.user.id, 'machines')
 
         if (pobj2.level < 3) {
             const embedtemp = await API.sendError(interaction, `Você não possui nível o suficiente para iniciar uma caçada!\nSeu nível atual: **${pobj2.level}/3**\nVeja seu progresso atual utilizando \`/perfil\``)
@@ -290,7 +290,7 @@ ${currinteraction ? currinteraction : ''}${autohunt && !dead ? '\n \n🤖 Caça 
 
                     const avatarurl = interaction.user.displayAvatarURL({ format: 'png', dynamic: true, size: 1024 })
 
-                    let machineobj = await DatabaseManager.get(interaction.user.id, 'machines')
+                    let machineobj = await API.client.dbget(interaction.user.id, 'machines')
                     let playerlevel = machineobj.level;
 
                     const equipsdata = [
@@ -397,7 +397,7 @@ ${currinteraction ? currinteraction : ''}${autohunt && !dead ? '\n \n🤖 Caça 
             async function playerlost(member) {
                 
                 losedesc = (`❌ Você perdeu a batalha!\nVocê perdeu seu progresso de xp!\nVeja seu progresso atual utilizando \`/perfil\``)
-                DatabaseManager.set(member.id, "machines", "xp", 0)
+                API.client.dbset(member.id, "machines", "xp", 0)
                 await API.playerUtils.stamina.subset(member.id, 0)
 
             }

@@ -93,7 +93,7 @@ async function editRace(message) { // Renomeado parâmetro para 'message'
               events.race.rodando = false;
               events.race.interactionid = null;
               // Remove do DB também
-              await DatabaseManager.updateOne('globals', { _id: API.id }, { $unset: { 'events.race': "" } });
+              await API.client.db.updateOne('globals', { _id: API.id }, { $unset: { 'events.race': "" } });
          }
          return;
     }
@@ -111,7 +111,7 @@ async function editRace(message) { // Renomeado parâmetro para 'message'
              // Se falhar ao editar (ex: mensagem deletada), para de tentar
              events.race.rodando = false;
              events.race.interactionid = null;
-             await DatabaseManager.updateOne('globals', { _id: API.id }, { $unset: { 'events.race': "" } });
+             await API.client.db.updateOne('globals', { _id: API.id }, { $unset: { 'events.race': "" } });
         }
     }
     // Se o tempo acabou
@@ -160,7 +160,7 @@ async function editRace(message) { // Renomeado parâmetro para 'message'
         events.race.interactionid = null;
         events.race.started = 0;
         // Limpa o estado da corrida no DB
-        await DatabaseManager.updateOne('globals', { _id: API.id }, { $unset: { 'events.race': "" } });
+        await API.client.db.updateOne('globals', { _id: API.id }, { $unset: { 'events.race': "" } });
         console.log('[Events.Race] Estado da corrida limpo.');
     }
 }
@@ -311,7 +311,7 @@ events.forceRace = async function() {
         // Não salva as apostas no DB por enquanto, ficam em memória
     };
     const update = { $set: { "events.race": raceDataToSave } };
-    const dbResult = await DatabaseManager.updateOne('globals', filter, update, { upsert: true });
+    const dbResult = await API.client.db.updateOne('globals', filter, update, { upsert: true });
 
     if (!dbResult || !(dbResult.modifiedCount > 0 || dbResult.upsertedCount > 0)) {
          console.error("[ERRO][Events.Race] Falha ao salvar estado inicial da corrida no banco de dados!");
@@ -348,7 +348,7 @@ events.load = async function() {
         // Carrega estado da Corrida
         const filter = { _id: API.id }; // ID do bot
         const options = { projection: { events: 1 } };
-        const globalDoc = await DatabaseManager.findOne('globals', filter, options);
+        const globalDoc = await API.client.db.findOne('globals', filter, options);
 
         if (globalDoc?.events?.race && globalDoc.events.race.rodando) {
             const savedRace = globalDoc.events.race;

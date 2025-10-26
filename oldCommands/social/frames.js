@@ -12,7 +12,7 @@ module.exports = {
         const Discord = API.Discord;
         const client = API.client;
 
-        const obj = await DatabaseManager.get(interaction.user.id, "players")
+        const obj = await API.client.dbget(interaction.user.id, "players")
 
         let frames = obj.frames
 

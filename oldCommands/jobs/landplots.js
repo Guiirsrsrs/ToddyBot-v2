@@ -13,7 +13,7 @@ module.exports = {
         const Discord = API.Discord;
         const client = API.client;
 
-        let pobj = await DatabaseManager.get(interaction.user.id, 'players')
+        let pobj = await API.client.dbget(interaction.user.id, 'players')
 
         const embed = new Discord.MessageEmbed().setColor(`#b8312c`)
         if (!pobj.plots || Object.keys(pobj.plots).length == 0) {

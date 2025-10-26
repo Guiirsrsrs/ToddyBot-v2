@@ -1,4 +1,4 @@
-// _classes/manager/DatabaseManager.js
+// _classes/manager/API.client.dbjs
 const { connectDB } = require('../db'); // Importa a função de conexão do MongoDB
 const API = require('../api'); // Importa a API centralizada (para acesso ao client para emitir erros)
 require('colors'); // Para logs coloridos

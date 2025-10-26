@@ -46,7 +46,7 @@ reacted = true;
     
             try {
     
-                const res0 = await DatabaseManager.query(text0);
+                const res0 = await API.client.dbquery(text0);
 
                 async function addTp(user_id, mastery) {
 
@@ -64,8 +64,8 @@ reacted = true;
                     addTp(row.user_id, parseInt(row.mastery))
                 });
 
-                await DatabaseManager.query(text1);
-                await DatabaseManager.query(text2);
+                await API.client.dbquery(text1);
+                await API.client.dbquery(text2);
     
                 embed.setDescription(`✅ Temporada foi resetada!`)
                 embed.setColor('#32a893');

@@ -28,9 +28,9 @@ module.exports = {
 
         const embedinteraction = await interaction.reply({ content: `<a:loading:736625632808796250> Carregando informações da máquina`, fetchReply: true })
 
-        const machinesobj = await DatabaseManager.get(member.id, 'machines')
+        const machinesobj = await API.client.dbget(member.id, 'machines')
         
-        const memberobj = await DatabaseManager.get(member.id, 'players')
+        const memberobj = await API.client.dbget(member.id, 'players')
 
         const profundidade = await API.maqExtension.getDepth(member.id)
 
@@ -58,8 +58,8 @@ module.exports = {
     
                 equippedchips.length == 1 ? equippedchips = [] : equippedchips.splice(slot, 1);
             
-                await DatabaseManager.increment(member.id, 'storage', `"piece:${placa.id}"`, 1)
-                await DatabaseManager.set(member.id, 'machines', `slots`, equippedchips)
+                await API.client.dbincrement(member.id, 'storage', `"piece:${placa.id}"`, 1)
+                await API.client.dbset(member.id, 'machines', `slots`, equippedchips)
                 equippedchips = await API.itemExtension.getEquippedChips(member.id);
     
             }
@@ -367,7 +367,7 @@ module.exports = {
 
             const { energia, energiamax, time } = await API.maqExtension.getEnergy(member.id)
             
-            const pObj = await DatabaseManager.get(member.id, 'players')
+            const pObj = await API.client.dbget(member.id, 'players')
             perm = pObj.perm
             
             embed2.addField(`<:energia:833370616304369674> Energia de \`${member.tag}\`: **[${energia}/${energiamax}]**`, `Irá recuperar completamente em: \`${API.ms(time)}\`\n**Você será relembrado quando sua energia recarregar!**\nOBS: A energia não recupera enquanto estiver usando!`)
@@ -445,11 +445,11 @@ module.exports = {
                 await API.eco.addToHistory(member.id, `Manutenção ${micon.length > 1 ? API.client.emojis.cache.get(micon) : micon} | - ${API.format(price)}`)
     
                 if (repairType == 'durability' || repairType == 'refrigeration') {
-                    await DatabaseManager.set(member.id, 'machines', repairType, max)
+                    await API.client.dbset(member.id, 'machines', repairType, max)
                 } else if (repairType == 'pressure') {
-                    await DatabaseManager.set(member.id, 'machines', 'pressure', Math.round(max/2))
+                    await API.client.dbset(member.id, 'machines', 'pressure', Math.round(max/2))
                 } else if (repairType == 'pollutants') {
-                    await DatabaseManager.set(member.id, 'machines', 'pollutants', 0)
+                    await API.client.dbset(member.id, 'machines', 'pollutants', 0)
                 }
     
                 var maintenance = await API.maqExtension.getMaintenance(member.id)
@@ -514,7 +514,7 @@ module.exports = {
         async function equipChip(chipe) {
             try {
                 const chips = await API.itemExtension.getChips(interaction.user.id);
-                const playerobj = await DatabaseManager.get(interaction.user.id, 'machines');
+                const playerobj = await API.client.dbget(interaction.user.id, 'machines');
                 
                 let contains = chips.length >= chipe;
                 
@@ -535,7 +535,7 @@ module.exports = {
                 }
 
                 await API.itemExtension.givePiece(interaction.user.id, { id: placa.id, durability: placa.durability });
-                await DatabaseManager.set(interaction.user.id, 'storage', `"piece:${placa.id}"`, placa.size-1)
+                await API.client.dbset(interaction.user.id, 'storage', `"piece:${placa.id}"`, placa.size-1)
                 equippedchips = await API.itemExtension.getEquippedChips(member.id);
                 const newchips = await API.itemExtension.getChips(interaction.user.id);
                 reworkEmbed(newchips)

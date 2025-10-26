@@ -20,7 +20,7 @@ module.exports = {
 
         const streakmax = -1
         
-        const obj = await DatabaseManager.get(interaction.user.id, "players");
+        const obj = await API.client.dbget(interaction.user.id, "players");
         let streak = obj['streak'];
 
         let reward;
@@ -67,7 +67,7 @@ module.exports = {
         await interaction.reply({ embeds: [embed] });
         API.eco.money.add(interaction.user.id, reward)
         API.eco.points.add(interaction.user.id, cristal)
-        DatabaseManager.set(interaction.user.id, "players", "streak", streak)
+        API.client.dbset(interaction.user.id, "players", "streak", streak)
         API.eco.addToHistory(interaction.user.id, `Recompensa diária | + ${API.format(reward)} ${API.moneyemoji}`)
         API.playerUtils.cooldown.set(interaction.user.id, "daily", 86400);
         API.playerUtils.cooldown.set(interaction.user.id, "breakstreak", 86400*2);

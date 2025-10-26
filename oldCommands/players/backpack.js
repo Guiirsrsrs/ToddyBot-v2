@@ -26,7 +26,7 @@ module.exports = {
             }
         }
 
-        const utilsobj = await DatabaseManager.get(member.id, 'players_utils')
+        const utilsobj = await API.client.dbget(member.id, 'players_utils')
 
         let backpackid = utilsobj.backpack;
         let backpack = API.shopExtension.getProduct(backpackid);

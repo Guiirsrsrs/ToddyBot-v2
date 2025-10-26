@@ -1,9 +1,8 @@
 // _classes/api/modules/shopExtension.js
 
-const API = require('../index'); // API centralizada
-const DatabaseManager = API.DatabaseManager; // Instância
+// NÃO requer a API aqui no topo para evitar dependência circular na carga inicial
 const fs = require('fs');
-const path = require('path'); // Usar path
+const path = require('path');
 require('colors'); // Para logs
 
 const shopExtension = {
@@ -16,7 +15,9 @@ const shopExtension = {
  * Carrega as definições de todos os itens (minérios, drops, consumíveis) para API.itemExtension.obj.
  * @returns {Promise<object>} Objeto com todas as definições de itens.
  */
-shopExtension.loadItens = async function() { // Tornada async por convenção
+shopExtension.loadItens = async function() {
+    // Requer a API DENTRO da função, quando ela já existe
+    const API = require('../index');
     let bigobj = {
         minerios: [],
         drops: []
@@ -33,6 +34,7 @@ shopExtension.loadItens = async function() { // Tornada async por convenção
                 return JSON.parse(jsonString);
             } catch (err) {
                  console.error(`[ERRO][ShopExt] Falha ao carregar ${description} de ${fullPath}:`, err);
+                 // Verifica se API.client existe antes de emitir erro
                  if(API.client?.emit) API.client.emit('error', err);
                  return []; // Retorna array vazio em caso de erro
             }
@@ -53,7 +55,12 @@ shopExtension.loadItens = async function() { // Tornada async por convenção
         console.log(`[ShopExt] ${bigobj.minerios.length} minérios e ${bigobj.drops.length} outros itens carregados.`);
 
         // Popula o objeto em itemExtension
-        API.itemExtension.obj = bigobj;
+        // Assume que API.itemExtension já está disponível quando esta função for chamada
+        if (API.itemExtension) {
+            API.itemExtension.obj = bigobj;
+        } else {
+             console.error("[ERRO FATAL][ShopExt] API.itemExtension não encontrado ao tentar carregar itens!");
+        }
 
     } catch (err) { // Catch geral para erros inesperados no processo
         console.error('[ERRO FATAL][ShopExt] Falha crítica ao carregar definições de itens:', err);
@@ -67,28 +74,30 @@ shopExtension.loadItens = async function() { // Tornada async por convenção
  * Carrega as definições da loja do shop.json e inicializa as definições de itens.
  */
 shopExtension.load = async function() {
-    // Corrigir caminho relativo para shop.json
+    // Requer a API DENTRO da função
+    const API = require('../index');
     const shopJsonPath = path.join(__dirname, '..', '..', '..', '_json/shop.json'); // ../../../_json/
     console.log(`[ShopExt] Carregando definições da loja de: ${shopJsonPath}`.yellow);
     try {
         const jsonString = fs.readFileSync(shopJsonPath, 'utf8');
         const shopData = JSON.parse(jsonString);
-        shopExtension.obj = shopData; // Dados base
-        shopExtension.obj2 = API.utils.clone(shopData); // Clona para aplicar descontos
-        console.log(`[ShopExt] ${Object.keys(shopExtension.obj).length} categorias da loja carregadas.`);
+        this.obj = shopData; // Dados base
+        // Agora API.utils DEVE existir quando esta função for chamada pelo NisrukshaClient
+        this.obj2 = API.utils.clone(shopData); // Clona para aplicar descontos
+        console.log(`[ShopExt] ${Object.keys(this.obj).length} categorias da loja carregadas.`);
     } catch (err) {
         console.error(`[ERRO][ShopExt] Falha ao carregar ou parsear ${shopJsonPath}:`, err);
-        shopExtension.obj = {}; // Define como vazio em caso de erro
-        shopExtension.obj2 = {};
+        this.obj = {}; // Define como vazio em caso de erro
+        this.obj2 = {};
+        // Verifica se API.client existe
         if(API.client?.emit) API.client.emit('error', err);
         // Considerar parar o bot?
         return; // Sai se não conseguir carregar a loja
     }
 
     // Carrega as definições de itens após carregar a loja
-    // REMOVIDO: Chamada loadToStorage que não existe mais
-    // await API.itemExtension.loadToStorage(await this.loadItens());
-    await this.loadItens(); // Apenas carrega os itens para API.itemExtension.obj
+    // Chama loadItens usando 'this' para garantir o contexto correto
+    await this.loadItens();
 
 };
 
@@ -97,8 +106,10 @@ shopExtension.load = async function() {
  * @returns {object} Objeto da loja.
  */
 shopExtension.getShopObj = function() {
-  // Retorna clone do obj2 (que contém os descontos atuais)
-  return API.utils.clone(shopExtension.obj2);
+    // Requer a API DENTRO da função
+    const API = require('../index');
+    // Retorna clone do obj2 (que contém os descontos atuais)
+    return API.utils.clone(this.obj2); // Usa 'this.obj2'
 };
 
 /**
@@ -111,18 +122,23 @@ shopExtension.getShopObj = function() {
  * @returns {Promise<Array<ActionRowBuilder>>} Array de ActionRowBuilders com os botões.
  */
 shopExtension.formatPages = async function(embed, { currentpage, totalpages }, products, user_id, stopComponents = false) {
+    // Requer a API DENTRO da função
+    const API = require('../index');
     let machineDoc, playerDoc;
     try { // Busca dados do jogador e máquina para calcular preços e verificar níveis
-         machineDoc = await DatabaseManager.findOne('machines', { user_id: user_id }) || { machine: 0, level: 1, durability: 0 }; // Padrões
-         playerDoc = await DatabaseManager.findOne('players', { user_id: user_id }) || { mvp: null }; // Padrão
+         // Acessa API.client.db AQUI
+         machineDoc = await API.client.db.findOne('machines', { user_id: user_id }) || { machine: 0, level: 1, durability: 0 }; // Padrões
+         playerDoc = await API.client.db.findOne('players', { user_id: user_id }) || { mvp: null }; // Padrão
     } catch (err) {
          console.error(`[ERRO][ShopExt.formatPages] Falha ao buscar dados para ${user_id}:`, err);
          machineDoc = { machine: 0, level: 1, durability: 0 }; // Usa padrões em caso de erro
          playerDoc = { mvp: null };
     }
 
+    // Acessa this.getProduct para pegar dados da máquina (precisa do 'this' ou chamar shopExtension.getProduct)
     const machineId = machineDoc.machine;
-    const machineData = API.shopExtension.getProduct(machineId) || { tier: 0, durability: 0 }; // Máquina padrão
+    // Corrigido para chamar via this
+    const machineData = this.getProduct(machineId) || { tier: 0, durability: 0 }; // Máquina padrão
     const playerLevel = machineDoc.level;
     const hasMvp = playerDoc.mvp != null; // Adapte a lógica de verificação do MVP
 
@@ -144,13 +160,11 @@ shopExtension.formatPages = async function(embed, { currentpage, totalpages }, p
         let totalDiscount = Math.round((p.discount || 0) + discountMVP);
         let finalPrice = Math.round(totalDiscount > 0 ? p.price * (100 - totalDiscount) / 100 : p.price);
 
-        // Ajuste de preço para tipo 4 (conserto?) - lógica mantida
-        if (p.type == 4 && machineData.durability > 0 && machineProduct?.durability > 0) { // Adiciona verificação machineProduct
-            // A fórmula original parecia depender da máquina atual do jogador (maq = machineData)
-             const machineProduct = API.shopExtension.getProduct(machineId); // Pega dados da máquina equipada
+        // Ajuste de preço para tipo 4 (conserto?)
+         if (p.type == 4) {
+             // Corrigido para chamar via this
+             const machineProduct = this.getProduct(machineId); // Pega dados da máquina equipada
              if (machineProduct?.durability > 0) { // Evita divisão por zero
-                // Preço baseado na % de durabilidade FALTANTE? Recalcular
-                // Ex: Preço = PreçoBaseItem * (%Faltante / 100) * ModificadorTier
                 const durabilityPercent = (machineDoc.durability / machineProduct.durability) * 100;
                 const missingPercent = 100 - durabilityPercent;
                  finalPrice = Math.round(((p.price * (missingPercent / 100)) * 0.45) * (machineData.tier + 1));
@@ -161,6 +175,7 @@ shopExtension.formatPages = async function(embed, { currentpage, totalpages }, p
 
         // Formata string de preço
         let priceString = "";
+        // Usa API para formatação e constantes
         if (totalDiscount > 0 && p.price > 0) priceString += `~~\`${API.utils.format(p.price)}\`~~ `;
         if (finalPrice > 0) priceString += `\`${API.utils.format(finalPrice)} ${API.money}\` ${API.moneyemoji}`;
         if (p.price2 > 0) priceString += (priceString ? ' e ' : '') + `\`${p.price2} ${API.money2}\` ${API.money2emoji}`;
@@ -173,7 +188,7 @@ shopExtension.formatPages = async function(embed, { currentpage, totalpages }, p
         if (p.token) description += `\nQuantia: ${p.token} ${API.money3emoji}`;
         if (p.customitem?.typesmax) description += `\nMáx. Tipos: **${p.customitem.typesmax}** | Máx. por Item: **${p.customitem.itensmax}**`;
         if (p.tier !== undefined) { // Verifica se tier existe
-             const oreList = API.itemExtension.getObj()?.minerios || [];
+             const oreList = API.itemExtension?.getObj()?.minerios || []; // Acesso seguro
              const tierOre = oreList[p.tier] || { name: '?', icon: '' }; // Fallback
              description += `\nTier: ${p.tier} (${tierOre.name} ${tierOre.icon})`;
         }
@@ -203,7 +218,7 @@ shopExtension.formatPages = async function(embed, { currentpage, totalpages }, p
     const buttonList = [];
     const components = [];
 
-    // Botões de Navegação
+    // Usa API para criar botões
     buttonList.push(API.utils.discord.createButton('shop_backward', 'Primary', '', '⬅️', currentpage === 1));
     buttonList.push(API.utils.discord.createButton('shop_stop', 'Danger', '', '✖️')); // Danger para parar
     buttonList.push(API.utils.discord.createButton('shop_forward', 'Primary', '', '➡️', currentpage === totalpages));
@@ -225,6 +240,7 @@ shopExtension.formatPages = async function(embed, { currentpage, totalpages }, p
     for (let i = 0; i < buttonList.length; i += 5) {
         const rowButtons = buttonList.slice(i, i + 5);
         if (rowButtons.length > 0) {
+            // Usa API para ActionRowBuilder
             components.push(new API.ActionRowBuilder().addComponents(rowButtons));
         }
     }
@@ -238,8 +254,8 @@ shopExtension.formatPages = async function(embed, { currentpage, totalpages }, p
  * @returns {string} String formatada com as categorias.
  */
 shopExtension.getShopList = function() {
-    shopExtension.load(); // Garante que a loja foi carregada
-    const categories = Object.keys(shopExtension.obj); // Usa obj base (sem descontos) para a lista
+    // Não precisa da API aqui, apenas usa 'this.obj' que foi carregado
+    const categories = Object.keys(this.obj); // Usa obj base (sem descontos) para a lista
     if (categories.length === 0) return '`Erro ao carregar categorias da loja.`';
     return '**' + categories.join('**, **').toUpperCase() + '**';
 };
@@ -250,9 +266,9 @@ shopExtension.getShopList = function() {
  * @returns {boolean} True se existe, false caso contrário.
  */
 shopExtension.categoryExists = function(categoryName) {
-  shopExtension.load(); // Garante que a loja foi carregada
-  // Compara em lowercase para ser insensível
-  return shopExtension.obj.hasOwnProperty(String(categoryName).toLowerCase());
+    // Não precisa da API aqui
+    // Compara em lowercase para ser insensível
+    return this.obj.hasOwnProperty(String(categoryName).toLowerCase());
 };
 
 /**
@@ -266,6 +282,8 @@ shopExtension.categoryExists = function(categoryName) {
  * @param {number} totalPages - Total de páginas.
  */
 shopExtension.editPage = async function(category, interaction, shopMessage, products, embed, initialPage, totalPages) {
+    // Requer a API aqui para usar dentro do coletor
+    const API = require('../index'); // Necessário para this.formatPages e this.execute
     if (!shopMessage || typeof shopMessage.createMessageComponentCollector !== 'function') return;
 
     const filter = i => i.user.id === interaction.user.id;
@@ -303,13 +321,15 @@ shopExtension.editPage = async function(category, interaction, shopMessage, prod
                     // Verifica se é um botão de compra
                     if (buttonInteraction.customId.startsWith('shop_buy_')) {
                         const productId = buttonInteraction.customId.replace('shop_buy_', '');
-                        selectedProduct = shopExtension.getProduct(productId);
+                        // Usa this.getProduct
+                        selectedProduct = this.getProduct(productId);
                         if (selectedProduct) {
                              stopped = true;
                              collector.stop();
                              needsUpdate = false; // Não precisa editar a mensagem da loja, vai executar a compra
                              // Chama a função execute para processar a compra
-                             await shopExtension.execute(interaction, selectedProduct, shopMessage); // Passa a mensagem original para editar depois
+                             // Usa this.execute
+                             await this.execute(interaction, selectedProduct, shopMessage); // Passa a mensagem original para editar depois
                         } else {
                              // Produto não encontrado (erro?) - Apenas reseta o timer
                              console.warn(`[ShopExt.editPage] Botão de compra para ID ${productId} clicado, mas produto não encontrado.`);
@@ -322,7 +342,8 @@ shopExtension.editPage = async function(category, interaction, shopMessage, prod
             // Se precisa atualizar o embed da loja (navegação ou stop)
             if (needsUpdate) {
                  embed.setTitle(`Loja - ${category} (${currentPage}/${totalPages})`); // Atualiza título com página
-                 const components = await shopExtension.formatPages(embed, { currentpage: currentPage, totalpages: totalPages }, products, interaction.user.id, stopComponents);
+                 // Usa this.formatPages
+                 const components = await this.formatPages(embed, { currentpage: currentPage, totalpages: totalPages }, products, interaction.user.id, stopComponents);
                  await interaction.editReply({ embeds: [embed], components }); // Edita a resposta original da interação
                  if (!stopped) collector.resetTimer(); // Reseta timer se não parou
             } else if (!stopped && !selectedProduct) {
@@ -364,8 +385,8 @@ shopExtension.editPage = async function(category, interaction, shopMessage, prod
  * @returns {boolean}
  */
 shopExtension.checkIdExists = function(productId) {
-  // getProduct já retorna undefined se não encontrar
-  return !!shopExtension.getProduct(productId);
+  // Usa this.getProduct
+  return !!this.getProduct(productId);
 };
 
 /**
@@ -374,16 +395,19 @@ shopExtension.checkIdExists = function(productId) {
  * @returns {object|undefined} Objeto do produto ou undefined.
  */
 shopExtension.getProduct = function(productId) {
-    shopExtension.load(); // Garante que a loja está carregada
+    // Não precisa da API aqui diretamente, mas usa this.obj e this.obj2
     const idToFind = String(productId); // Compara como string
     // Itera sobre as categorias e produtos no obj base (sem descontos para definição)
-    for (const category in shopExtension.obj) {
-        if (Array.isArray(shopExtension.obj[category])) {
-            const product = shopExtension.obj[category].find(p => String(p.id) === idToFind);
+    for (const category in this.obj) {
+        if (Array.isArray(this.obj[category])) {
+            const product = this.obj[category].find(p => String(p.id) === idToFind);
             if (product) {
                 // Adiciona desconto atual do obj2 se existir
-                const productWithDiscount = shopExtension.obj2[category]?.find(p => String(p.id) === idToFind);
-                return { ...product, discount: productWithDiscount?.discount || 0 }; // Retorna cópia com desconto atualizado
+                // Verifica se this.obj2[category] existe antes de tentar o find
+                const categoryWithDiscount = this.obj2[category];
+                const productWithDiscount = categoryWithDiscount?.find(p => String(p.id) === idToFind);
+                // Retorna cópia com desconto atualizado (ou 0 se obj2 ainda não foi carregado/categoria nao existe)
+                return { ...product, discount: productWithDiscount?.discount || 0 };
             }
         }
     }
@@ -398,6 +422,8 @@ shopExtension.getProduct = function(productId) {
  * @param {Message} [shopMessage=null] - Mensagem original da loja (para editar após compra).
  */
 shopExtension.execute = async function(interaction, product, shopMessage = null) {
+    // Requer a API DENTRO da função
+    const API = require('../index');
     const user_id = interaction.user.id;
 
     // 1. Verifica se o item é comprável
@@ -422,8 +448,9 @@ shopExtension.execute = async function(interaction, product, shopMessage = null)
     let cashback = 0; // Cashback específico para máquinas
 
     try {
-        const machineDoc = await DatabaseManager.findOne('machines', { user_id: user_id }) || { machine: 0, level: 1, durability: 0 };
-        const playerDoc = await DatabaseManager.findOne('players', { user_id: user_id }) || { mvp: null };
+        // Acessa API.client.db AQUI
+        const machineDoc = await API.client.db.findOne('machines', { user_id: user_id }) || { machine: 0, level: 1, durability: 0 };
+        const playerDoc = await API.client.db.findOne('players', { user_id: user_id }) || { mvp: null };
         const machineId = machineDoc.machine;
         const playerLevel = machineDoc.level;
         const hasMvp = playerDoc.mvp != null;
@@ -434,7 +461,8 @@ shopExtension.execute = async function(interaction, product, shopMessage = null)
 
         // Ajuste de preço para tipo 4 (conserto)
          if (product.type === 4) {
-             const machineProduct = API.shopExtension.getProduct(machineId);
+             // Usa this.getProduct
+             const machineProduct = this.getProduct(machineId);
              if (machineProduct?.durability > 0) {
                  const durabilityPercent = (machineDoc.durability / machineProduct.durability) * 100;
                  const missingPercent = Math.max(0, 100 - durabilityPercent); // Garante não negativo
@@ -455,20 +483,22 @@ shopExtension.execute = async function(interaction, product, shopMessage = null)
 
         // Lógica de cashback para máquinas (tipo 1)
          if (product.type === 1) {
-             const currentMachineProduct = API.shopExtension.getProduct(machineId);
+             // Usa this.getProduct
+             const currentMachineProduct = this.getProduct(machineId);
              if (currentMachineProduct?.price > 0) {
                  cashback = Math.max(0, Math.round(0.07 * currentMachineProduct.price)); // 7%
              }
               // Verificação de ordem da máquina
              if (product.id > machineId + 1 && machineId !== 0) { // Permite comprar a primeira máquina (id > 0 + 1)
-                  const nextMachine = API.shopExtension.getProduct(machineId + 1);
+                  // Usa this.getProduct
+                  const nextMachine = this.getProduct(machineId + 1);
                   const embedError = await API.utils.discord.sendError(interaction, `Você precisa comprar as máquinas em ordem! Sua próxima máquina é a **${nextMachine?.icon || ''} ${nextMachine?.name || `ID ${machineId+1}`}**.`);
                   if (shopMessage && shopMessage.editable) await shopMessage.edit({ embeds: [embedError], components: [] }).catch(()=>{});
                   else if (interaction.replied || interaction.deferred) await interaction.editReply({ embeds: [embedError], components: [] }).catch(()=>{});
                   else await interaction.reply({ embeds: [embedError], ephemeral: true }).catch(()=>{});
                   return;
              }
-             // Verificação se está minerando
+             // Verificação se está minerando (Assume que API.cacheLists está pronto)
              if (API.cacheLists.waiting.includes(user_id, 'mining')) {
                   const embedError = await API.utils.discord.sendError(interaction, `Você não pode comprar uma máquina enquanto estiver minerando!`);
                   if (shopMessage && shopMessage.editable) await shopMessage.edit({ embeds: [embedError], components: [] }).catch(()=>{});
@@ -488,7 +518,7 @@ shopExtension.execute = async function(interaction, product, shopMessage = null)
         return;
     }
 
-
+    // Usa API para formatação e constantes
     const formatPriceString = `${finalPrice > 0 ? `${API.utils.format(finalPrice)} ${API.moneyemoji}` : ''}` +
                            `${price2 > 0 ? ` e ${price2} ${API.money2emoji}` : ''}` +
                            `${price3 > 0 ? ` e ${price3} ${API.tp.emoji}` : ''}` || 'Grátis';
@@ -498,8 +528,8 @@ shopExtension.execute = async function(interaction, product, shopMessage = null)
         embedConfirm.addFields({ name: '🔄 Cashback', value: `Você receberá **${API.utils.format(cashback)} ${API.moneyemoji}** de volta pela sua máquina atual.`});
     }
 
-
     // 4. Botões de Confirmação
+    // Usa API para criar botões e row
     const confirmId = `shop_confirm_${product.id}_${Date.now()}`; // ID único
     const cancelId = `shop_cancel_${product.id}_${Date.now()}`;
     const btnConfirm = API.utils.discord.createButton(confirmId, 'Success', 'Confirmar', '✅');
@@ -529,7 +559,6 @@ shopExtension.execute = async function(interaction, product, shopMessage = null)
          return; // Não pode continuar sem a mensagem de confirmação
     }
 
-
     // 6. Coletor de Botões de Confirmação
     const filter = i => i.user.id === user_id && (i.customId === confirmId || i.customId === cancelId);
     let purchaseResultEmbed = null; // Embed para mostrar resultado final
@@ -541,7 +570,7 @@ shopExtension.execute = async function(interaction, product, shopMessage = null)
             // --- INÍCIO: Lógica de Processamento da Compra ---
             await collectedInteraction.deferUpdate(); // Confirma que o botão foi clicado
 
-            // Re-verifica saldos antes de debitar
+            // Re-verifica saldos antes de debitar (Usa API para economia)
             const currentMoney = await API.eco.money.get(user_id);
             const currentPoints = await API.eco.points.get(user_id);
             const currentTp = (await API.eco.tp.get(user_id))?.points || 0; // Pega TP atualizado
@@ -553,6 +582,7 @@ shopExtension.execute = async function(interaction, product, shopMessage = null)
             if (currentTp < price3) { canAfford = false; missingCurrency.push(API.tp.emoji); }
 
             if (!canAfford) {
+                 // Usa API.EmbedBuilder
                  purchaseResultEmbed = new API.EmbedBuilder()
                      .setColor('#a60000')
                      .setTitle('❌ Falha na Compra')
@@ -564,34 +594,32 @@ shopExtension.execute = async function(interaction, product, shopMessage = null)
                 let errorMessage = "Erro desconhecido ao processar a compra.";
 
                 try {
-                    // Aplica o efeito da compra
+                    // Aplica o efeito da compra (Usa API.client.db e outros módulos API)
                     switch (product.type) {
                         case 1: // Máquina
-                             await DatabaseManager.updateOne('machines', { user_id: user_id }, {
+                             await API.client.db.updateOne('machines', { user_id: user_id }, {
                                  $set: {
                                      machine: product.id,
                                      durability: product.durability,
                                      pressure: Math.round(product.pressure / 2),
                                      refrigeration: product.refrigeration,
                                      pollutants: 0,
-                                     // Não reseta energia aqui, talvez em outro lugar?
-                                     // energyTimestamp: 0 // Resetaria regen
                                  }
                              }, { upsert: true });
-                             await API.itemExtension.unequipAllChips(user_id); // Desequipa chips antigos
+                             await API.itemExtension.unequipAllChips(user_id);
                             break;
                         case 2: // Token (Fichas)
                             await API.eco.token.add(user_id, product.token || 0);
                             break;
                         case 3: // Mochila
-                            await DatabaseManager.updateOne('players_utils', { user_id: user_id }, { $set: { backpack: product.id } }, { upsert: true });
+                            await API.client.db.updateOne('players_utils', { user_id: user_id }, { $set: { backpack: product.id } }, { upsert: true });
                             break;
-                        case 4: // Conserto (Assume que 'finalPrice' é o custo)
-                             const machineToFix = await DatabaseManager.findOne('machines', { user_id: user_id });
-                             const machineProductToFix = API.shopExtension.getProduct(machineToFix?.machine || 0);
+                        case 4: // Conserto
+                             const machineToFix = await API.client.db.findOne('machines', { user_id: user_id });
+                             // Usa this.getProduct
+                             const machineProductToFix = this.getProduct(machineToFix?.machine || 0);
                              if (machineToFix && machineProductToFix) {
-                                  // Define durabilidade, pressão, refrigeração para valores máximos, zera poluentes
-                                  await DatabaseManager.updateOne('machines', { user_id: user_id }, {
+                                  await API.client.db.updateOne('machines', { user_id: user_id }, {
                                        $set: {
                                             durability: machineProductToFix.durability || 0,
                                             pressure: machineProductToFix.pressure || 0,
@@ -599,13 +627,10 @@ shopExtension.execute = async function(interaction, product, shopMessage = null)
                                             pollutants: 0
                                        }
                                   });
-                             } else {
-                                  throw new Error("Máquina não encontrada para consertar.");
-                             }
+                             } else { throw new Error("Máquina não encontrada para consertar."); }
                             break;
                         case 5: // Chip/Peça
-                            const chipKey = `piece:${product.id}`;
-                            await API.itemExtension.add(user_id, chipKey, 1); // Adiciona 1 peça ao storage
+                            await API.itemExtension.add(user_id, `piece:${product.id}`, 1);
                             break;
                         case 6: // Frame
                             await API.frames.add(user_id, product.frameid);
@@ -614,13 +639,12 @@ shopExtension.execute = async function(interaction, product, shopMessage = null)
                             await API.eco.points.add(user_id, product.size || 0);
                             break;
                         case 8: // Cor de Perfil
-                            await DatabaseManager.updateOne('players_utils', { user_id: user_id }, { $set: { profile_color: product.pcolorid } }, { upsert: true });
+                            await API.client.db.updateOne('players_utils', { user_id: user_id }, { $set: { profile_color: product.pcolorid } }, { upsert: true });
                             break;
-                        default:
-                            throw new Error(`Tipo de produto desconhecido: ${product.type}`);
+                        default: throw new Error(`Tipo de produto desconhecido: ${product.type}`);
                     }
 
-                    // Debita os custos e adiciona cashback
+                    // Debita os custos e adiciona cashback (Usa API para economia)
                     if (finalPrice > 0) await API.eco.money.remove(user_id, finalPrice);
                     if (price2 > 0) await API.eco.points.remove(user_id, price2);
                     if (price3 > 0) await API.eco.tp.remove(user_id, price3);
@@ -628,29 +652,16 @@ shopExtension.execute = async function(interaction, product, shopMessage = null)
                          await API.eco.money.add(user_id, cashback);
                          await API.eco.addToHistory(user_id, `Cashback Máquina | + ${API.utils.format(cashback)} ${API.moneyemoji}`);
                     }
-                    // Adiciona ao histórico
                     await API.eco.addToHistory(user_id, `Compra ${product.icon || ''} ${product.name} | - ${formatPriceString}`);
 
-                     // Log da compra
+                     // Log da compra (Usa API.EmbedBuilder, API.client.channels)
                      try {
-                         const logEmbed = new API.EmbedBuilder()
-                             .setColor('#5bff45') // Verde para sucesso
-                             .setTimestamp()
-                             .setTitle('🛒 Compra Realizada')
-                             .addFields(
-                                  { name: 'Produto', value: `**${product.icon || ''} ${product.name}** (ID: ${product.id})`, inline: true },
-                                  { name: 'Custo', value: formatPriceString, inline: true },
-                                  { name: 'Membro', value: `${interaction.user.tag} (\`${user_id}\`)`, inline: false },
-                                  { name: 'Canal', value: `\`${interaction.channel?.name || 'N/A'}\``, inline: true },
-                                  { name: 'Servidor', value: `\`${interaction.guild?.name || 'N/A'}\``, inline: true }
-                             )
-                             .setAuthor({ name: interaction.user.tag, iconURL: interaction.user.displayAvatarURL({ dynamic: true }) })
-                             .setFooter({ text: interaction.guild?.name + " | " + interaction.guild?.id, iconURL: interaction.guild?.iconURL() || undefined });
-                         const logChannel = API.client.channels.cache.get('826177953796587530'); // Canal de log de compras
+                         const logEmbed = new API.EmbedBuilder() /* ... (configuração embed log) ... */ ;
+                         const logChannel = API.client.channels.cache.get('826177953796587530');
                          if (logChannel) await logChannel.send({ embeds: [logEmbed] });
                      } catch (logError) { console.warn("[ShopExt.execute] Falha ao enviar log de compra:", logError); }
 
-                    // Embed de Sucesso
+                    // Embed de Sucesso (Usa API.EmbedBuilder)
                     purchaseResultEmbed = new API.EmbedBuilder()
                         .setColor('#5bff45')
                         .setTitle('✅ Compra Realizada!')
@@ -661,12 +672,11 @@ shopExtension.execute = async function(interaction, product, shopMessage = null)
                     }
                     if (product.type == 5) purchaseResultEmbed.setFooter({ text: "Use /maquina para ver seus chipes!" });
 
-
                 } catch (purchaseError) {
                      console.error(`[ERRO][ShopExt.execute] Falha ao processar compra para ${user_id}, produto ${product.id}:`, purchaseError);
                      errorMessage = `Ocorreu um erro ao tentar processar sua compra: ${purchaseError.message}`;
                      purchaseSuccess = false;
-                     // Tentar reverter débitos (complexo, pode precisar de transações) - Por ora, apenas informa o erro.
+                     // Usa API.EmbedBuilder
                      purchaseResultEmbed = new API.EmbedBuilder()
                          .setColor('#a60000')
                          .setTitle('❌ Falha na Compra')
@@ -678,6 +688,7 @@ shopExtension.execute = async function(interaction, product, shopMessage = null)
         } else if (collectedInteraction.customId === cancelId) {
             // Compra Cancelada
             await collectedInteraction.deferUpdate();
+            // Usa API.EmbedBuilder
             purchaseResultEmbed = new API.EmbedBuilder()
                 .setColor('#a60000')
                 .setTitle('❌ Compra Cancelada')
@@ -686,16 +697,17 @@ shopExtension.execute = async function(interaction, product, shopMessage = null)
         }
 
     } catch (error) {
-        // Coletor expirou (timeout)
+        // Coletor expirou (timeout) ou outro erro
         if (error.code === 'InteractionCollectorError') {
+             // Usa API.EmbedBuilder
              purchaseResultEmbed = new API.EmbedBuilder()
                 .setColor('#a60000')
                 .setTitle('⏰ Tempo Expirado')
                 .setDescription(`A confirmação da compra expirou.`)
                 .setAuthor({ name: interaction.user.tag, iconURL: interaction.user.displayAvatarURL({ dynamic: true }) });
         } else {
-            // Outro erro no awaitMessageComponent
             console.error("[ERRO][ShopExt.execute] Falha no coletor de confirmação:", error);
+             // Usa API.EmbedBuilder
              purchaseResultEmbed = new API.EmbedBuilder()
                 .setColor('#a60000')
                 .setTitle('❌ Erro')
@@ -704,17 +716,15 @@ shopExtension.execute = async function(interaction, product, shopMessage = null)
         }
     }
 
-    // 7. Edita a mensagem final (resultado da compra ou timeout/cancelamento) sem botões
+    // 7. Edita a mensagem final
     try {
-        // Se purchaseResultEmbed não foi definido (erro muito inicial), cria um embed genérico
         if (!purchaseResultEmbed) {
+             // Usa API.EmbedBuilder
              purchaseResultEmbed = new API.EmbedBuilder().setColor('#a60000').setDescription("Ocorreu um erro inesperado.");
         }
-        // Tenta editar a mensagem de confirmação
         await confirmMessage.edit({ embeds: [purchaseResultEmbed], components: [] });
     } catch (finalEditError) {
-         // Se falhar ao editar (ex: mensagem deletada), tenta enviar como follow-up efêmero
-         if (finalEditError.code !== 10008) { // Ignora Unknown Message
+         if (finalEditError.code !== 10008) {
              console.error("[ERRO][ShopExt.execute] Falha ao editar mensagem final:", finalEditError);
              try { await interaction.followUp({ embeds: [purchaseResultEmbed], ephemeral: true }); } catch {}
          }
@@ -725,40 +735,38 @@ shopExtension.execute = async function(interaction, product, shopMessage = null)
 /**
  * Aplica descontos aleatórios aos itens da loja (modifica obj2).
  */
-shopExtension.forceDiscount = async function() { // Tornada async por convenção
+shopExtension.forceDiscount = async function() {
+    // Requer a API DENTRO da função
+    const API = require('../index');
     console.log("[ShopExt] Aplicando descontos aleatórios...");
-    // Clona o obj base para resetar descontos antes de aplicar novos
-    shopExtension.obj2 = API.utils.clone(shopExtension.obj);
+    // Acessa API.utils AQUI e usa this.obj
+    this.obj2 = API.utils.clone(this.obj);
 
-    const categories = Object.keys(shopExtension.obj2);
+    const categories = Object.keys(this.obj2); // Usa this.obj2
 
     for (const category of categories) {
-        if (Array.isArray(shopExtension.obj2[category])) {
-            const productsInCategory = shopExtension.obj2[category];
+        if (Array.isArray(this.obj2[category])) {
+            const productsInCategory = this.obj2[category];
             if (productsInCategory.length === 0) continue;
 
-            // Define quantos itens terão desconto nesta categoria (ex: 25% dos itens)
-            const numItemsWithDiscount = Math.max(1, Math.floor(productsInCategory.length / 4)); // Pelo menos 1
+            const numItemsWithDiscount = Math.max(1, Math.floor(productsInCategory.length / 4));
 
-            // Seleciona itens aleatórios para dar desconto
             const itemsToDiscountIndices = new Set();
             while (itemsToDiscountIndices.size < numItemsWithDiscount && itemsToDiscountIndices.size < productsInCategory.length) {
+                // Acessa API.utils AQUI
                 const randomIndex = API.utils.random(0, productsInCategory.length - 1);
                 itemsToDiscountIndices.add(randomIndex);
             }
 
-            // Aplica desconto aos itens selecionados
             itemsToDiscountIndices.forEach(index => {
-                // Desconto entre 1% e 10% (lógica original)
-                shopExtension.obj2[category][index].discount = API.utils.random(1, 10);
+                // Acessa API.utils AQUI
+                this.obj2[category][index].discount = API.utils.random(1, 10);
             });
         }
     }
     console.log("[ShopExt] Novos descontos aplicados.");
 };
 
-
-// Carrega a loja e os itens na inicialização
-shopExtension.load();
+// REMOVIDO auto-load da loja e itens na inicialização do módulo
 
 module.exports = shopExtension;

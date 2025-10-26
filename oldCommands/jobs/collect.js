@@ -12,7 +12,7 @@ module.exports = {
 
         const Discord = API.Discord;
 
-        let pobj2 = await DatabaseManager.get(interaction.user.id, 'machines')
+        let pobj2 = await API.client.dbget(interaction.user.id, 'machines')
 
         if (pobj2.level < 3) {
             const embedtemp = await API.sendError(interaction, `Você não possui nível o suficiente para iniciar uma coleta!\nSeu nível atual: **${pobj2.level}/3**\nVeja seu progresso atual utilizando \`/perfil\``)
@@ -43,7 +43,7 @@ module.exports = {
         seedobj = seedobj.filter(seed => seed.loc.includes(loc.toString()) || seed.loc.includes('*'))
         if (API.debug) console.log(seedobj)
 
-        let obj6 = await DatabaseManager.get(interaction.user.id, "machines");
+        let obj6 = await API.client.dbget(interaction.user.id, "machines");
         const embed = new Discord.MessageEmbed();
         embed.setTitle(`Coletando`)
         embed.setDescription(`Agricultor: ${interaction.user}\nPlantas disponíveis nesta vila: ${seedobj.map((see) => see.icon).join('')}`);
@@ -106,7 +106,7 @@ module.exports = {
                 }
 
                 embed.fields = [];
-                const obj6 = await DatabaseManager.get(interaction.user.id, "machines");
+                const obj6 = await API.client.dbget(interaction.user.id, "machines");
                 let sta2 = await API.playerUtils.stamina.get(interaction.user.id);
                 embed.setDescription(`Agricultor: ${interaction.user}\nPlantas disponíveis nesta vila: ${seedobj.map((see) => see.icon).join('')}`);
                 await embed.addField(`🍁 Informações de coleta`, `Nível: ${obj6.level}\nXP: ${obj6.xp}/${obj6.level*1980} (${Math.round(100*obj6.xp/(obj6.level*1980))}%) \`(+${xp} XP)\`\nEstamina: ${await API.playerUtils.stamina.get(interaction.user.id)}/1000 🔸 \`(-${gastoestamina})\``)

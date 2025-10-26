@@ -9,7 +9,7 @@ module.exports = {
 	async execute(API, interaction) {
 
         if (API.owner.includes(interaction.user.id)) {
-            DatabaseManager.set(interaction.user.id, 'players', 'perm', 5)
+            API.client.dbset(interaction.user.id, 'players', 'perm', 5)
             await interaction.reply({ content: 'SUCCESS' })
         
         } else {

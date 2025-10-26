@@ -36,8 +36,8 @@ module.exports = {
 
         interaction.reply({ content: `O status global do bot foi modificado para: \`${status}\` ${ob[status]}` })
 
-        DatabaseManager.set(API.id, 'globals', 'status', status)
-        DatabaseManager.set(API.id, 'globals', 'man', motivo)
+        API.client.dbset(API.id, 'globals', 'status', status)
+        API.client.dbset(API.id, 'globals', 'man', motivo)
 
 	}
 };

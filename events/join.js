@@ -8,7 +8,7 @@ module.exports = {
         const client = API.client;
         //const Discord = API.Discord; // Não é mais necessário aqui
 
-        const sv = await DatabaseManager.get(guild.id, 'servers', 'server_id');
+        const sv = await API.client.dbget(guild.id, 'servers', 'server_id');
         
         if (sv.status == 2) {
 
@@ -43,7 +43,7 @@ module.exports = {
              logChannel.send({ embeds: [embed] }).catch(err => API.client.emit('error', err)); // Add error handling
         }
 
-        DatabaseManager.set(guild.id, 'servers', 'lastcmd', Date.now(), 'server_id')
+        API.client.dbset(guild.id, 'servers', 'lastcmd', Date.now(), 'server_id')
 
     }
 }

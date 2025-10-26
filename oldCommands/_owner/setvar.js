@@ -42,9 +42,9 @@ module.exports = {
 
         try {
 
-            await DatabaseManager.setIfNotExists(v, tabela, va);
+            await API.client.dbsetIfNotExists(v, tabela, va);
             const text =  `UPDATE ${tabela} SET ${coluna} = $2 WHERE ${va} = $1;`, values = [v.id, eval(valor)]
-            await DatabaseManager.query(text, values);
+            await API.client.dbquery(text, values);
 
             embed.setDescription(`✅ Você setou o valor \`${eval(valor)}\` para ${v} em \`${tabela}:${coluna}\``)
             embed.setColor('#32a893');

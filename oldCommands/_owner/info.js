@@ -53,7 +53,7 @@ async function send(API, interaction) {
         const text =  `SELECT * FROM servers;`
         let array = [];
         try {
-            let res = await DatabaseManager.query(text);
+            let res = await API.client.dbquery(text);
             array = res.rows;
         } catch (err) {
             console.log(err.stack)
@@ -83,7 +83,7 @@ async function send(API, interaction) {
                 const text =  `UPDATE servers SET lastcmd = $2 WHERE server_id=$1;`,
                 values = [array1[i].server_id, 0]
                 try {
-                    await DatabaseManager.query(text, values);
+                    await API.client.dbquery(text, values);
                 } catch (err) {
                     console.log(err.stack)
                     API.client.emit('error', err)
@@ -113,7 +113,7 @@ async function send(API, interaction) {
                 const text =  `UPDATE servers SET lastcmd = $2 WHERE server_id=$1;`,
                 values = [array2[i].server_id, 0]
                 try {
-                    await DatabaseManager.query(text, values);
+                    await API.client.dbquery(text, values);
                 } catch (err) {
                     console.log(err.stack)
                     API.client.emit('error', err)

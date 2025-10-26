@@ -55,7 +55,7 @@ module.exports = {
             return;
         }
 
-        const pobjmaq = await DatabaseManager.get(interaction.user.id, 'machines')
+        const pobjmaq = await API.client.dbget(interaction.user.id, 'machines')
 
         if (pobjmaq.level < 3) {
             const embedtemp = await API.sendError(interaction, `Você não possui nível o suficiente para enviar currículo!\nSeu nível atual: **${pobjmaq.level}/3**\nVeja seu progresso atual utilizando \`/perfil\``)

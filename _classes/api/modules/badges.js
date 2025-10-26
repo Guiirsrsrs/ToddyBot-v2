@@ -3,7 +3,8 @@
 const { readFileSync } = require('fs');
 const path = require('path'); // Importar path
 const API = require('../index'); // Importar API centralizada
-const DatabaseManager = API.DatabaseManager; // Usar a instância
+const DatabaseManager = new API.DatabaseManager();
+
 
 const badges = {
     json: [] // Armazena os dados dos emblemas carregados do JSON
@@ -14,6 +15,7 @@ const badges = {
  */
 badges.load = function () {
     // Só carrega se ainda não foi carregado
+    const DatabaseManager = new API.DatabaseManager();
     if (badges.json.length === 0) {
         // Corrigir caminho relativo para o JSON
         const jsonPath = path.join(__dirname, '..', '..', '..', '_json/social/badges.json'); // ../../../_json/
@@ -37,10 +39,11 @@ badges.load = function () {
  * @returns {Promise<boolean>} True se o utilizador possui o emblema, false caso contrário.
  */
 badges.has = async function (user_id, badgeId) {
+    const DatabaseManager = new API.DatabaseManager();
     try {
         const filter = { user_id: user_id };
         const options = { projection: { badges: 1 } }; // Busca apenas o campo badges
-        const playerDoc = await DatabaseManager.findOne('players', filter, options);
+        const playerDoc = await API.client.db.findOne('players', filter, options);
 
         // Verifica se o documento existe, se tem o array 'badges' e se o array inclui o ID
         // Converte badgeId para string para comparação consistente
@@ -59,6 +62,7 @@ badges.has = async function (user_id, badgeId) {
  * @returns {Promise<string>} Mensagem indicando o resultado.
  */
 badges.add = async function (user_id, badgeId) {
+    const DatabaseManager = new API.DatabaseManager();
     badges.load(); // Garante que os emblemas estão carregados (para get)
     const badgeToAdd = String(badgeId); // Garante que é string
 
@@ -76,7 +80,7 @@ badges.add = async function (user_id, badgeId) {
         const filter = { user_id: user_id };
         // Usa $addToSet para adicionar ao array 'badges' apenas se não existir
         const update = { $addToSet: { badges: badgeToAdd } };
-        const result = await DatabaseManager.updateOne('players', filter, update, { upsert: true }); // upsert cria o doc se não existir
+        const result = await API.client.db.updateOne('players', filter, update, { upsert: true }); // upsert cria o doc se não existir
 
         if (result && (result.modifiedCount > 0 || result.upsertedCount > 0)) {
             return `Emblema ${badgeToAdd} adicionado com sucesso.`;
@@ -104,6 +108,7 @@ badges.add = async function (user_id, badgeId) {
  * @returns {Promise<string>} Mensagem indicando o resultado.
  */
 badges.remove = async function (user_id, badgeId) {
+    const DatabaseManager = new API.DatabaseManager();
     const badgeToRemove = String(badgeId); // Garante que é string
 
     try {
@@ -115,7 +120,7 @@ badges.remove = async function (user_id, badgeId) {
         const filter = { user_id: user_id };
         // Usa $pull para remover todas as ocorrências do emblema do array 'badges'
         const update = { $pull: { badges: badgeToRemove } };
-        const result = await DatabaseManager.updateOne('players', filter, update); // Não precisa de upsert aqui
+        const result = await API.client.db.updateOne('players', filter, update); // Não precisa de upsert aqui
 
         if (result && result.modifiedCount > 0) {
             return `Emblema ${badgeToRemove} removido com sucesso.`;
@@ -141,6 +146,7 @@ badges.remove = async function (user_id, badgeId) {
  * @returns {object|undefined} Objeto com os dados do emblema ou undefined se não encontrado.
  */
 badges.get = function (badgeId) {
+    const DatabaseManager = new API.DatabaseManager();
     badges.load(); // Garante que os dados JSON estão carregados
     const idToFind = String(badgeId);
     return badges.json.find(item => String(item.id) === idToFind); // Compara como strings

@@ -72,8 +72,8 @@ module.exports = {
 
         total = r1+r2+r3+r4
         
-        let playerobj = await DatabaseManager.get(interaction.user.id, 'machines')
-        let playerobj2 = await DatabaseManager.get(interaction.user.id, 'players')
+        let playerobj = await API.client.dbget(interaction.user.id, 'machines')
+        let playerobj2 = await API.client.dbget(interaction.user.id, 'players')
         const req = 10;
         const name = nome;
         const type = e[setor].tipo;
@@ -111,8 +111,8 @@ module.exports = {
                 return;
             }
             
-            playerobj = await DatabaseManager.get(interaction.user.id, 'machines')
-            playerobj2 = await DatabaseManager.get(interaction.user.id, 'players')
+            playerobj = await API.client.dbget(interaction.user.id, 'machines')
+            playerobj2 = await API.client.dbget(interaction.user.id, 'players')
             
             cristais = await API.eco.points.get(interaction.user.id)
 
@@ -152,7 +152,7 @@ module.exports = {
 
             let cont = false;
             try {
-                let res = await DatabaseManager.query(`SELECT * FROM companies;`);
+                let res = await API.client.dbquery(`SELECT * FROM companies;`);
                 for (const r of res.rows) {
                     if (r.name.toLowerCase() == name.toLowerCase()) {
                         cont = true;

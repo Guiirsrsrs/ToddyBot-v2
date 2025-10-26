@@ -19,8 +19,8 @@ module.exports = {
         }
 
         let company;
-        let pobj = await DatabaseManager.get(interaction.user.id, 'players')
-        let pobj2 = await DatabaseManager.get(interaction.user.id, 'machines')
+        let pobj = await API.client.dbget(interaction.user.id, 'players')
+        let pobj2 = await API.client.dbget(interaction.user.id, 'machines')
 
         if (await API.company.check.isWorker(interaction.user.id)) {
             company = await API.company.get.companyById(pobj.company);
@@ -30,8 +30,8 @@ module.exports = {
 
         if (company.workers == null || company.workers.length == 0) {
 
-            let ownerobj = await DatabaseManager.get(interaction.user.id, 'players')
-            let ownerobj2 = await DatabaseManager.get(interaction.user.id, 'machines')
+            let ownerobj = await API.client.dbget(interaction.user.id, 'players')
+            let ownerobj2 = await API.client.dbget(interaction.user.id, 'machines')
 
             const embed = new Discord.MessageEmbed()
             .setThumbnail(company.logo)
@@ -57,8 +57,8 @@ module.exports = {
                 return
             }
 
-            let { companyact } = await DatabaseManager.get(user.id, 'players')
-            let { level } = await DatabaseManager.get(user.id, 'machines')
+            let { companyact } = await API.client.dbget(user.id, 'players')
+            let { level } = await API.client.dbget(user.id, 'machines')
 
             // Score, ultima atividade executada, rendimento total para a empresa
             
@@ -76,8 +76,8 @@ module.exports = {
             return bscore - ascore
         })
 
-        let ownerobj = await DatabaseManager.get(owner.id, 'players')
-        let ownerobj2 = await DatabaseManager.get(owner.id, 'machines')
+        let ownerobj = await API.client.dbget(owner.id, 'players')
+        let ownerobj2 = await API.client.dbget(owner.id, 'machines')
 
         const price = 60
         

@@ -89,7 +89,7 @@ async function updateInviteJson(member, owner) {
 
     API.frames.add(owner.id, 14)
 
-    DatabaseManager.set(member.id, 'players_utils', 'invite', invitejson1)
-    DatabaseManager.set(owner.id, 'players_utils', 'invite', invitejson2)
+    API.client.dbset(member.id, 'players_utils', 'invite', invitejson1)
+    API.client.dbset(owner.id, 'players_utils', 'invite', invitejson2)
 
 }

@@ -6,7 +6,7 @@ module.exports = {
     perm: 5,
 	async execute(API, interaction) {
 
-        const pobj = await DatabaseManager.get(interaction.user.id, 'players')
+        const pobj = await API.client.dbget(interaction.user.id, 'players')
 
         const perm = pobj.perm
         
@@ -58,7 +58,7 @@ module.exports = {
         interaction.reply({ content: `A permissão do membro foi alterada para: \`${selected}\` ${ob[selected]}` })
 
         await API.setPerm(member.id, selected)
-        await DatabaseManager.set(member.id, 'players', 'banreason', m)
+        await API.client.dbset(member.id, 'players', 'banreason', m)
 
 
 	}

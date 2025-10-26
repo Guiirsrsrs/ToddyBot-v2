@@ -99,7 +99,7 @@ module.exports = {
             await API.setCompanieInfo(interaction.user.id, company.company_id, 'curriculum', array)
             await API.setCompanieInfo(interaction.user.id, company.company_id, 'workers', workers)
 
-            DatabaseManager.set(usr.id, 'players', 'company', company.company_id)
+            API.client.dbset(usr.id, 'players', 'company', company.company_id)
             return;
 
         } else if (subCmd == 'negar') {
@@ -154,7 +154,7 @@ module.exports = {
             
             for (const r of array) {
                 let usr = await API.client.users.fetch(r.split(";")[0])
-                const pobjmaq = await DatabaseManager.get(usr.id, 'machines')
+                const pobjmaq = await API.client.dbget(usr.id, 'machines')
                 embed.addField(`📰 Nº ${array.indexOf(r)+1}`, `Enviado por: ${usr} 🡮 \`${usr.tag}\` 🡮 \`${usr.id}\`\nNível: ${pobjmaq.level}\nEnviou há: **${API.ms2(Date.now()-parseInt(r.split(";")[1]))}**\n\`/curr <aceitar/negar> ${array.indexOf(r)+1}\``)
             }
 

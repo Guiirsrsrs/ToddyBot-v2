@@ -1,4 +1,4 @@
-const API = require("../../api.js");
+const API = require("../../api/index");
 let bg, mark, treasureicon, duckicon
 
 loadbg()

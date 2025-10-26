@@ -43,7 +43,7 @@ module.exports = {
         
         total = r1+r2+r3+r4
 
-        let playerobj2 = await DatabaseManager.get(interaction.user.id, 'players')
+        let playerobj2 = await API.client.dbget(interaction.user.id, 'players')
 
         const name = company.name
         const type = company.type
@@ -79,8 +79,8 @@ module.exports = {
                 return;
             }
 
-            playerobj = await DatabaseManager.get(interaction.user.id, 'machines')
-            playerobj2 = await DatabaseManager.get(interaction.user.id, 'players')
+            playerobj = await API.client.dbget(interaction.user.id, 'machines')
+            playerobj2 = await API.client.dbget(interaction.user.id, 'players')
 
             let locname = API.townExtension.getTownNameByNum(company.loc)
             let townname = await API.townExtension.getTownName(interaction.user.id);
@@ -107,7 +107,7 @@ module.exports = {
             }
 
             try {
-                await DatabaseManager.query(`DELETE FROM companies WHERE user_id=${interaction.user.id};`);
+                await API.client.dbquery(`DELETE FROM companies WHERE user_id=${interaction.user.id};`);
             }catch (err) { 
                 API.client.emit('error', err)
                 throw err 
@@ -127,7 +127,7 @@ module.exports = {
             embed2.setTitle(`Empresa fechada!`) 
             .addField(`Informações da Empresa`, `Fundador: ${interaction.user}\nNome: **${name}**\nSetor: **${icon} ${API.company.types[company.type].charAt(0).toUpperCase() + API.company.types[company.type].slice(1)}**\nLocalização: **${townname}**\nCódigo: **${code}**`)
             embed2.setColor('#a60000')
-            API.client.guilds.cache.get('693150851396796446').channels.cache.get('747490313765126336').send({ embeds: [embed2] });
+            API.client.guilds.cache.get('1153704546351190158').channels.cache.get('747490313765126336').send({ embeds: [embed2] });
 
         });
         

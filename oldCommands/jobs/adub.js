@@ -10,8 +10,8 @@ module.exports = {
     companytype: 1,
 	async execute(API, interaction, company) {
 
-        let pobj = await DatabaseManager.get(interaction.user.id, 'players')
-        let pobj2 = await DatabaseManager.get(interaction.user.id, 'machines')
+        let pobj = await API.client.dbget(interaction.user.id, 'players')
+        let pobj2 = await API.client.dbget(interaction.user.id, 'machines')
 
         let allplots = pobj.plots
         let plot
@@ -86,7 +86,7 @@ module.exports = {
                 return;
             }
 
-            pobj = await DatabaseManager.get(interaction.user.id, 'players')
+            pobj = await API.client.dbget(interaction.user.id, 'players')
 
             const money = await API.eco.money.get(interaction.user.id);
   
@@ -102,7 +102,7 @@ module.exports = {
 
             plots[townnum].adubacao = 100
 
-            DatabaseManager.set(interaction.user.id, 'players', 'plots', plots)
+            API.client.dbset(interaction.user.id, 'players', 'plots', plots)
 
             embed.setColor('#5bff45');
             embed.addField('✅ Adubação realizada', `

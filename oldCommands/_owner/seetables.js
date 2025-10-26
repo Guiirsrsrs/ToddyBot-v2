@@ -22,13 +22,13 @@ module.exports = {
 
         if (selectedtable != null) {
             
-            let res = await DatabaseManager.query(`SELECT EXISTS (SELECT 1 FROM pg_tables WHERE schemaname = 'public' AND tablename = '${selectedtable}');`);
+            let res = await API.client.dbquery(`SELECT EXISTS (SELECT 1 FROM pg_tables WHERE schemaname = 'public' AND tablename = '${selectedtable}');`);
 
             if (!res.rows[0].exists) {
                 return interaction.reply({ content: 'Essa tabela não existe! Utilize `/seetables`'})
             }
 
-            let res2 = await DatabaseManager.query(`SELECT * FROM information_schema.columns WHERE table_schema = 'public' AND table_name   = '${selectedtable}';`);
+            let res2 = await API.client.dbquery(`SELECT * FROM information_schema.columns WHERE table_schema = 'public' AND table_name   = '${selectedtable}';`);
         
             for (xi = 0; xi < res2.rows.length; xi++) {
 
@@ -39,7 +39,7 @@ module.exports = {
             return
         }
 
-        let res = await DatabaseManager.query(`SELECT * FROM pg_catalog.pg_tables WHERE schemaname != 'pg_catalog' AND schemaname != 'information_schema';`);
+        let res = await API.client.dbquery(`SELECT * FROM pg_catalog.pg_tables WHERE schemaname != 'pg_catalog' AND schemaname != 'information_schema';`);
         
         let tables = res.rows
         

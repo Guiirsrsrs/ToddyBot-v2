@@ -19,7 +19,7 @@ module.exports = {
         const points = await API.eco.points.get(member.id);
         const token = await API.eco.token.get(member.id);
         const tp = await API.eco.tp.get(member.id);
-        //const obj = await DatabaseManager.get(member.id, 'players');
+        //const obj = await API.client.dbget(member.id, 'players');
         const code = (lang, code) => (`\`\`\`${lang}\n${String(code).slice(0, 1000) + (code.length >= 1000 ? '...' : '')}\n\`\`\``);
         const embed = new Discord.MessageEmbed()
         .setTitle(`Conta de \`${member.username}\``)

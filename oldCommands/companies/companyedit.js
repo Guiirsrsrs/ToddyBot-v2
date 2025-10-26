@@ -63,7 +63,7 @@ module.exports = {
               .setDescription(`Background da **EMPRESA** de \`${interaction.user.tag} | ${interaction.user.id}\``)
               .setImage(url);
               try{
-                API.client.guilds.cache.get('693150851396796446').channels.cache.get('736383144499871765').send({ embeds: [embed2] });
+                API.client.guilds.cache.get('1153704546351190158').channels.cache.get('736383144499871765').send({ embeds: [embed2] });
               }catch (err){
                 API.client.emit('error', err)
               }
@@ -89,7 +89,7 @@ module.exports = {
                 .setDescription(`Logo da **EMPRESA** de \`${interaction.user.tag} | ${interaction.user.id}\``)
                 .setImage(url);
               try{
-                API.client.guilds.cache.get('693150851396796446').channels.cache.get('736383144499871765').send({ embeds: [embed2] });
+                API.client.guilds.cache.get('1153704546351190158').channels.cache.get('736383144499871765').send({ embeds: [embed2] });
               }catch (err){
                 API.client.emit('error', err)
               }

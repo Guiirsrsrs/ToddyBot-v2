@@ -60,7 +60,7 @@ module.exports = {
             return;
         }
         
-        let memberobj = await DatabaseManager.get(member.id, "machines")
+        let memberobj = await API.client.dbget(member.id, "machines")
         let nivel = memberobj.level
 
         if (nivel < 50) {
@@ -131,8 +131,8 @@ module.exports = {
                         API.eco.bank.add(member.id, total);
                         API.eco.addToHistory(interaction.user.id, `📤 Transferência para ${member} | - ${API.format(total)} ${API.moneyemoji}`)
                         API.eco.addToHistory(member.id, `📥 Transferência de ${interaction.user} | + ${API.format(total)} ${API.moneyemoji}`)
-                        let obj = await DatabaseManager.get(interaction.user.id, "players");
-                        DatabaseManager.set(interaction.user.id, "players", "tran", obj.tran + 1);
+                        let obj = await API.client.dbget(interaction.user.id, "players");
+                        API.client.dbset(interaction.user.id, "players", "tran", obj.tran + 1);
                         if (nivel < 50) {
                             if (total > mat/2.5) {
                                 API.playerUtils.cooldown.set(member.id, "receivetr", 43200);

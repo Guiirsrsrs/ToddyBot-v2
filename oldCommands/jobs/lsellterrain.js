@@ -13,7 +13,7 @@ module.exports = {
         const Discord = API.Discord;
         const client = API.client;
 
-        let pobj = await DatabaseManager.get(interaction.user.id, 'players')
+        let pobj = await API.client.dbget(interaction.user.id, 'players')
 
         const check = await API.playerUtils.cooldown.check(interaction.user.id, "sellterrain");
         if (check) {
@@ -92,7 +92,7 @@ module.exports = {
             }
 
             let company;
-            let pobj = await DatabaseManager.get(interaction.user.id, 'players')
+            let pobj = await API.client.dbget(interaction.user.id, 'players')
             
             if (await API.company.check.isWorker(interaction.user.id)) {
                 company = await API.company.get.companyById(pobj.company);
@@ -122,7 +122,7 @@ module.exports = {
             API.playerUtils.cooldown.set(interaction.user.id, "sellterrain", 0);
 
             delete allplots[townnum.toString()]
-            DatabaseManager.set(interaction.user.id, 'players', 'plots', allplots)
+            API.client.dbset(interaction.user.id, 'players', 'plots', allplots)
             
             if (company == undefined || interaction.user.id == owner.id) return
             let rend = company.rend || []

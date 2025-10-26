@@ -21,7 +21,7 @@ module.exports = {
         let size = await API.maqExtension.storage.getSize(member.id);
         let max = await API.maqExtension.storage.getMax(member.id);
         let price = await API.maqExtension.storage.getPrice(member.id);
-        let obj = await DatabaseManager.get(member.id, 'storage');
+        let obj = await API.client.dbget(member.id, 'storage');
         let lvl = obj.storage;
         
 		const embed = new Discord.MessageEmbed()
@@ -70,8 +70,8 @@ module.exports = {
                 } else {
                     embed.setColor('#5bff45');
                     pago += price;
-                    await DatabaseManager.set(interaction.user.id, 'storage', 'storage', lvl+r1)
-                    let obj55 = await DatabaseManager.get(member.id, 'storage');
+                    await API.client.dbset(interaction.user.id, 'storage', 'storage', lvl+r1)
+                    let obj55 = await API.client.dbget(member.id, 'storage');
                     let lvl55 = obj55.storage;
                     embed.addField('<:upgrade:738434840457642054> Aprimoramento realizado com sucesso!', `Peso máximo: **${API.format(max)}g (+${r1*API.maqExtension.storage.sizeperlevel})**\nNível do armazém: **${API.format(lvl55)} (+${r1})**\nPreço pago: **${API.format(pago)} ${API.money} ${API.moneyemoji}**\nPreço do próximo aprimoramento: **${API.format(await API.maqExtension.storage.getPrice(member.id, undefined, max+(r1*API.maqExtension.storage.sizeperlevel)))} ${API.money} ${API.moneyemoji}**`)
                     .setFooter('')
@@ -81,10 +81,10 @@ module.exports = {
                 }
 
             } else if (b.customId == 'recursos'){
-                let obj55 = await DatabaseManager.get(member.id, 'storage');
+                let obj55 = await API.client.dbget(member.id, 'storage');
                 let lvl55 = obj55.storage;
                 let obj = API.itemExtension.getObj();
-                const obj2 = await DatabaseManager.get(member.id, 'storage')
+                const obj2 = await API.client.dbget(member.id, 'storage')
                 embed.addField('<:storageinfo:738427915531845692> Informações', `Peso atual: **[${API.format(await API.maqExtension.storage.getSize(member.id))}/${API.format(max+(r1*API.maqExtension.storage.sizeperlevel)-API.maqExtension.storage.sizeperlevel)}]g**\nNível do armazém: **${API.format(lvl55)}**`);
                 let total = 0;
                 for (const r of obj['minerios']) {

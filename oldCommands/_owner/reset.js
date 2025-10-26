@@ -49,11 +49,11 @@ reacted = true;
     
                 try {
     
-                    const res = await DatabaseManager.query(text1);
+                    const res = await API.client.dbquery(text1);
     
                     for (const r of res.rows) {
                         let text = `DELETE FROM ${r.table_name};`;
-                        await DatabaseManager.query(text);
+                        await API.client.dbquery(text);
                     }
     
                     embed.setDescription(`✅ Todos os dados foram resetados!`)
@@ -72,7 +72,7 @@ reacted = true;
     
                 try {
     
-                    await DatabaseManager.query(text1);
+                    await API.client.dbquery(text1);
     
                     embed.setDescription(`✅ Dados da tabela \`${tabela.toLowerCase()}\` foram resetados!`)
                     embed.setColor('#32a893');

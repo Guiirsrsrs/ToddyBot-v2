@@ -24,7 +24,7 @@ module.exports = {
             return;
         }
 
-        let pobj = await DatabaseManager.get(interaction.user.id, 'players')
+        let pobj = await API.client.dbget(interaction.user.id, 'players')
 
         let company = await API.company.get.companyById(pobj.company);
         
@@ -71,7 +71,7 @@ Você deseja se demitir da empresa **${API.company.e[API.company.types[company.t
             embed.addField('✅ Demitido!', `Você se demitiu da empresa **${API.company.e[API.company.types[company.type]].icon} ${company.name}**!`)
             interaction.editReply({ embeds: [embed], components: [] });
             
-            let pobj = await DatabaseManager.get(interaction.user.id, 'players')
+            let pobj = await API.client.dbget(interaction.user.id, 'players')
             let company2 = await API.company.get.companyById(pobj.company);
             let owner = await API.company.get.ownerById(pobj.company);
             let botowner = await API.client.users.fetch(API.owner[0])
@@ -93,9 +93,9 @@ Você deseja se demitir da empresa **${API.company.e[API.company.types[company.t
             //let score = -(pobj.companyact == null ? 0 : pobj.companyact.score)
 
             API.setCompanieInfo(owner.id, company.company_id, 'workers', list)
-            DatabaseManager.set(interaction.user.id, 'players', 'company', null)
+            API.client.dbset(interaction.user.id, 'players', 'company', null)
             //await API.company.stars.add(interaction.user.id, company.company_id, { score })
-            DatabaseManager.set(interaction.user.id, 'players', 'companyact', null)
+            API.client.dbset(interaction.user.id, 'players', 'companyact', null)
             
         });
         

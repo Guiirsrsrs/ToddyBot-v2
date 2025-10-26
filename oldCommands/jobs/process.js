@@ -14,8 +14,8 @@ module.exports = {
         
 		const embed = new Discord.MessageEmbed()
 
-        const players_utils = await DatabaseManager.get(interaction.user.id, 'players_utils')
-        const machines = await DatabaseManager.get(interaction.user.id, 'machines')
+        const players_utils = await API.client.dbget(interaction.user.id, 'players_utils')
+        const machines = await API.client.dbget(interaction.user.id, 'machines')
 
         const check = await API.playerUtils.cooldown.check(interaction.user.id, "verprocessamentos");
         if (check) {
@@ -47,7 +47,7 @@ module.exports = {
 
             processjson = defaultjson
 
-            DatabaseManager.set(interaction.user.id, 'players_utils', 'process', defaultjson)
+            API.client.dbset(interaction.user.id, 'players_utils', 'process', defaultjson)
         }
 
         if (processjson.tools[0].durability.current <= 0 && processjson.tools[1].fuel.current <= 0) {
@@ -209,7 +209,7 @@ module.exports = {
 
             API.playerUtils.cooldown.set(interaction.user.id, "verprocessamentos", 35);
 
-            const players_utils = await DatabaseManager.get(interaction.user.id, 'players_utils')
+            const players_utils = await API.client.dbget(interaction.user.id, 'players_utils')
             const money = await API.eco.money.get(interaction.user.id)
             processjson = players_utils.process
 
@@ -238,7 +238,7 @@ module.exports = {
                     if (tool.potency.current+5 <= tool.potency.rangemax) tool.potency.current += 5
                 }
                 processjson.tools[tool.type] = tool
-                DatabaseManager.set(interaction.user.id, 'players_utils', 'process', processjson)
+                API.client.dbset(interaction.user.id, 'players_utils', 'process', processjson)
                 b.customId = (tool.type == 0 ? 'ferr' : 'lqd')
                 current = (tool.type == 0 ? 'ferr' : 'lqd')
             }
@@ -294,7 +294,7 @@ ${(tool.fuel.current/tool.fuel.max*100).toFixed(2) < 50 ? `Custo de reposição 
                         processjson.tools[1].fuel.current = processjson.tools[1].fuel.max
                     }
                     
-                    DatabaseManager.set(interaction.user.id, 'players_utils', 'process', processjson)
+                    API.client.dbset(interaction.user.id, 'players_utils', 'process', processjson)
                     await API.eco.money.remove(interaction.user.id, custorepair);
                     await API.eco.addToHistory(interaction.user.id, `${(b.customId == 'ferr' ? 'Reparo' : 'Reposição')} | - ${API.format(custorepair)} ${API.moneyemoji}`)
                     await API.company.jobs.process.add(interaction.user.id)
@@ -321,7 +321,7 @@ ${(tool.fuel.current/tool.fuel.max*100).toFixed(2) < 50 ? `Custo de reposição 
                     const oldproc = processjson.in.find((x) => x.id == id)
                     const indexProcess = processjson.in.indexOf(oldproc)
                     processjson.in.splice(indexProcess, 1)
-                    DatabaseManager.set(interaction.user.id, 'players_utils', 'process', processjson)
+                    API.client.dbset(interaction.user.id, 'players_utils', 'process', processjson)
                     setProcess()
 
                     let xp = await API.playerUtils.execExp(interaction, oldproc.xpbase)

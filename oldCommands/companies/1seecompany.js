@@ -19,7 +19,7 @@ module.exports = {
 
 		const códigoempresa = interaction.options.getString('empresa')
 
-		const playerobj = await DatabaseManager.get(interaction.user.id, 'players')
+		const playerobj = await API.client.dbget(interaction.user.id, 'players')
 
 		let company
 

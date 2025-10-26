@@ -87,8 +87,8 @@ reacted = true;
                     API.eco.money.add(interaction.user.id, total);
                     API.eco.bank.remove(interaction.user.id, total);
                     API.eco.addToHistory(interaction.user.id, `📤 Saque | - ${API.format(total)} ${API.moneyemoji}`)
-                    let obj = await DatabaseManager.get(interaction.user.id, "players");
-                    DatabaseManager.set(interaction.user.id, "players", "saq", obj.saq + 1);
+                    let obj = await API.client.dbget(interaction.user.id, "players");
+                    API.client.dbset(interaction.user.id, "players", "saq", obj.saq + 1);
                 }
             }
             interaction.editReply({ embeds: [embed], components: [] });

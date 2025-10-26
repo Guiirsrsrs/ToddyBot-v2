@@ -16,7 +16,7 @@ module.exports = {
         const Discord = API.Discord;
 
         async function getItem() {
-            const globalobj = await DatabaseManager.get(API.id, 'globals')
+            const globalobj = await API.client.dbget(API.id, 'globals')
                 
             const objgkeys = globalobj.keys || [];
         
@@ -78,13 +78,13 @@ module.exports = {
             
             switch (item.form.type) {
                 case 0:
-                    const pobj = await DatabaseManager.get(interaction.user.id, 'players')
+                    const pobj = await API.client.dbget(interaction.user.id, 'players')
                     const perm = pobj.perm
                     API.badges.add(interaction.user.id, 1)
                     await API.frames.add(interaction.user.id, 3)
                     await API.frames.add(interaction.user.id, 4)
-                    DatabaseManager.set(interaction.user.id, 'players', 'mvp', pobj.mvp == null || pobj.mvp <= 0 ? (Date.now()+item.time) : (pobj.mvp+item.time))
-                    if (perm == 1) DatabaseManager.set(interaction.user.id, 'players', 'perm', 3)
+                    API.client.dbset(interaction.user.id, 'players', 'mvp', pobj.mvp == null || pobj.mvp <= 0 ? (Date.now()+item.time) : (pobj.mvp+item.time))
+                    if (perm == 1) API.client.dbset(interaction.user.id, 'players', 'perm', 3)
                     break;
                 case 1:
                     API.eco.money.add(interaction.user.id, item.size)
@@ -101,7 +101,7 @@ module.exports = {
                     break;
             }
 
-            await DatabaseManager.set(API.id, 'globals', 'keys', objgkeys)
+            await API.client.dbset(API.id, 'globals', 'keys', objgkeys)
 
             embed.setColor('#5bff45');
             embed.addField('✅ Chave usada com sucesso', `Você usou uma **🔑 Chave de Ativação**!\nProduto: **${item.form.icon} ${item.form.name}**${item.form.requiret == true ? `\nDuração: **${API.ms2(time)}**`: ''}${size > 0 ? `\nQuantia: **${size}**`:''}`, ``)

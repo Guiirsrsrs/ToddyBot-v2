@@ -71,7 +71,7 @@ module.exports = {
         }
 
         let obj = API.itemExtension.getObj();
-        const obj2 = await DatabaseManager.get(interaction.user.id, 'storage')
+        const obj2 = await API.client.dbget(interaction.user.id, 'storage')
 
         if (quantia == 'tudo' && minério != null) {
 
@@ -148,7 +148,7 @@ module.exports = {
                 break;
         }
 
-        const playerobj = await DatabaseManager.get(interaction.user.id, 'players')
+        const playerobj = await API.client.dbget(interaction.user.id, 'players')
 
         const taxa = playerobj.mvp != null ? 0.01 : 0.03
 
@@ -188,7 +188,7 @@ module.exports = {
                 return;
             }
 
-            let obj3 = await DatabaseManager.get(interaction.user.id, 'storage')
+            let obj3 = await API.client.dbget(interaction.user.id, 'storage')
 
             switch (type) {
                 case 0:

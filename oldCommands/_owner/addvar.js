@@ -35,11 +35,11 @@ module.exports = {
         }
 		const embed = new Discord.MessageEmbed()
         try {
-            await DatabaseManager.setIfNotExists(v, tabela);
+            await API.client.dbsetIfNotExists(v, tabela);
 
-            let res = await DatabaseManager.query(`SELECT * FROM ${tabela} WHERE ${va} = $1;`, [v.id]);
-            await DatabaseManager.increment(v.id, tabela, coluna, eval(valor), va)
-            let res3 = await DatabaseManager.query(`SELECT * FROM ${tabela} WHERE ${va} = $1;`, [v.id]);
+            let res = await API.client.dbquery(`SELECT * FROM ${tabela} WHERE ${va} = $1;`, [v.id]);
+            await API.client.dbincrement(v.id, tabela, coluna, eval(valor), va)
+            let res3 = await API.client.dbquery(`SELECT * FROM ${tabela} WHERE ${va} = $1;`, [v.id]);
 
             embed.setDescription(`✅ Dados de ${v} atualizados! ${res.rows[0][coluna]} -> ${res3.rows[0][coluna]}`)
 

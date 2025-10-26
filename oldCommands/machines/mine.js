@@ -33,7 +33,7 @@ module.exports = {
             return;
         }
 
-        let playerobj = await DatabaseManager.get(member.id, 'machines');
+        let playerobj = await API.client.dbget(member.id, 'machines');
         let maqid = playerobj.machine;
 
         let maq = API.shopExtension.getProduct(maqid);
@@ -67,7 +67,7 @@ module.exports = {
         }
 
         let init = Date.now();
-        let obj6 = await DatabaseManager.get(member.id, "machines");
+        let obj6 = await API.client.dbget(member.id, "machines");
 
         let timeupdate = API.maqExtension.update*1000
 
@@ -108,7 +108,7 @@ module.exports = {
 
                 await API.itemExtension.removeChipsDurability(member.id, API.random(1, 10))
 
-                let playerobj = await DatabaseManager.get(member.id, 'machines');
+                let playerobj = await API.client.dbget(member.id, 'machines');
                 let maqid = playerobj.machine;
                 let maq = API.shopExtension.getProduct(maqid);
 
@@ -130,13 +130,13 @@ module.exports = {
                     var [ user_refrigeration, refrigerationMax, refrigerationPercent ] = refrigeration
 
                     if (user_durability == 0) {
-                        await DatabaseManager.set(member.id, 'machines', "durability", durabilityMax)
+                        await API.client.dbset(member.id, 'machines', "durability", durabilityMax)
                     }
                     if (user_pressure == 0) {
-                        await DatabaseManager.set(member.id, 'machines', "pressure", Math.round(pressureMax/2))
+                        await API.client.dbset(member.id, 'machines', "pressure", Math.round(pressureMax/2))
                     }
                     if (user_refrigeration == 0) {
-                        await DatabaseManager.set(member.id, 'machines', "refrigeration", refrigerationMax)
+                        await API.client.dbset(member.id, 'machines', "refrigeration", refrigerationMax)
                     }
 
                     var { durability, pressure, refrigeration } = await API.maqExtension.getMaintenance(member.id)
@@ -150,7 +150,7 @@ module.exports = {
                         const name = "durability"
                         try {
                             if (durabilityPercent < 1) {
-                                await DatabaseManager.set(member.id, 'machines', name, 0)
+                                await API.client.dbset(member.id, 'machines', name, 0)
                             } else {
                                 let fvalue = value
                                 for (const i of array){
@@ -159,7 +159,7 @@ module.exports = {
                                         fvalue -= Math.round(chipproduct.sizeeffect*fvalue/100)
                                     };
                                 }
-                                await DatabaseManager.increment(member.id, 'machines', name, -fvalue)
+                                await API.client.dbincrement(member.id, 'machines', name, -fvalue)
                             }
                         } catch (error) {
                             console.log(error)
@@ -172,15 +172,15 @@ module.exports = {
                         try {
                             if (refrigerationPercent <= 40) {
                                 if (API.random(0, 100) < API.random(40, 70)) {
-                                    await DatabaseManager.increment(member.id, 'machines', name, value*6)
+                                    await API.client.dbincrement(member.id, 'machines', name, value*6)
                                 } else {
-                                    await DatabaseManager.increment(member.id, 'machines', name, -value*2)
+                                    await API.client.dbincrement(member.id, 'machines', name, -value*2)
                                 }
                             } if (refrigerationPercent > 40) {
                                 if (API.random(0, 100) < API.random(40, 70)) {
-                                    await DatabaseManager.increment(member.id, 'machines', name, -value*2)
+                                    await API.client.dbincrement(member.id, 'machines', name, -value*2)
                                 } else {
-                                    await DatabaseManager.increment(member.id, 'machines', name, value)
+                                    await API.client.dbincrement(member.id, 'machines', name, value)
                                 }
                             }
                         } catch (error) {
@@ -193,15 +193,15 @@ module.exports = {
                         try {
                             if (pressurePercent > 60) {
                                 if (API.random(0, 100) < API.random(40, 80)) {
-                                    await DatabaseManager.increment(member.id, 'machines', name, value*5)
+                                    await API.client.dbincrement(member.id, 'machines', name, value*5)
                                 } else {
-                                    await DatabaseManager.increment(member.id, 'machines', name, Math.round(value*2))
+                                    await API.client.dbincrement(member.id, 'machines', name, Math.round(value*2))
                                 }
                             } else {
                                 if (API.random(0, 100) < API.random(40, 80)) {
-                                    await DatabaseManager.increment(member.id, 'machines', name, value*2)
+                                    await API.client.dbincrement(member.id, 'machines', name, value*2)
                                 } else {
-                                    await DatabaseManager.increment(member.id, 'machines', name, Math.round(value))
+                                    await API.client.dbincrement(member.id, 'machines', name, Math.round(value))
                                 }
                             }
                         } catch (error) {
@@ -213,7 +213,7 @@ module.exports = {
                     async function checkRefrigeration() {
                         const name = "refrigeration"
                         try {
-                            await DatabaseManager.increment(member.id, 'machines', name, -value*4)
+                            await API.client.dbincrement(member.id, 'machines', name, -value*4)
                         } catch (error) {
                             console.log(error)
                         }
@@ -263,7 +263,7 @@ module.exports = {
 
                 let progress2 = API.getProgress(8, { 60: '<:energyfull:741675235010674849>', 30: '<:energy:850573316602200064>', 0: '<:energy:850573316728946698>' }, '<:energyempty:741675234796503041>', (energia+1 < 0 ? 0 : energia+1), energiamax);
                 embed.fields = [];
-                const obj6 = await DatabaseManager.get(member.id, "machines");
+                const obj6 = await API.client.dbget(member.id, "machines");
                 const arsize = await API.maqExtension.storage.getSize(member.id);
                 
                 await embed.setDescription(`Minerador: ${member}`);

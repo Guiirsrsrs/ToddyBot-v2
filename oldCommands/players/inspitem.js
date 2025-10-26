@@ -24,7 +24,7 @@ module.exports = {
 
         const drop = API.itemExtension.get(id)
         
-        const obj2 = await DatabaseManager.get(interaction.user.id, 'storage')
+        const obj2 = await API.client.dbget(interaction.user.id, 'storage')
         if (obj2[drop.name.replace(/"/g, '')] <= 0) {
             const embedtemp = await API.sendError(interaction, `Você não possui ${drop.icon} \`${drop.displayname}\` na sua mochila para inspecionar!`)
             await interaction.reply({ embeds: [embedtemp]})

@@ -13,7 +13,7 @@ module.exports = {
         const Discord = API.Discord;
         const client = API.client;
 
-        let pobj = await DatabaseManager.get(interaction.user.id, 'players')
+        let pobj = await API.client.dbget(interaction.user.id, 'players')
         if (pobj.rod == null) delete pobj.rod
 
         if (API.cacheLists.waiting.includes(interaction.user.id, 'fishing')) {
@@ -49,10 +49,10 @@ module.exports = {
             reacted = true;
             collector.stop();
 
-            let pobj2 = await DatabaseManager.get(interaction.user.id, 'players')
+            let pobj2 = await API.client.dbget(interaction.user.id, 'players')
             if (pobj2.rod == null) delete pobj2.rod
 
-            playerobj = await DatabaseManager.get(interaction.user.id, 'machines')
+            playerobj = await API.client.dbget(interaction.user.id, 'machines')
 
             if (!pobj2.rod) {
                 embed.setColor('#a60000');
@@ -111,7 +111,7 @@ module.exports = {
             if (list.includes(0)) {
 
                 pobj2.rod.stars += 1
-                DatabaseManager.set(interaction.user.id, 'players', 'rod', pobj2.rod)
+                API.client.dbset(interaction.user.id, 'players', 'rod', pobj2.rod)
                 embed.setColor('#5bff45')
                 .setDescription(`\`${API.company.jobs.formatStars(pobj2.rod.stars)}\`\nGasto por turno: **${pobj2.rod.sta} 🔸**\nProfundidade: **${pobj2.rod.profundidade}m**\nPreço do upgrade: **${total} ${API.money} ${API.moneyemoji}**`)
                 embed.addField(`✅ Sucesso no upgrade`, `Você gastou **${API.format(total)} ${API.money} ${API.moneyemoji}** e adicionou uma estrela ⭐ ao nível da sua vara de pesca!`)
@@ -119,7 +119,7 @@ module.exports = {
 
             } if (list.includes(1)) {
                 pobj2.rod.sta -= 1
-                DatabaseManager.set(interaction.user.id, 'players', 'rod', pobj2.rod)
+                API.client.dbset(interaction.user.id, 'players', 'rod', pobj2.rod)
                 embed.setColor('#5bff45')
                 .setDescription(`\`${API.company.jobs.formatStars(pobj2.rod.stars)}\`\nGasto por turno: **${pobj2.rod.sta} 🔸**\nProfundidade: **${pobj2.rod.profundidade}m**\nPreço do upgrade: **${total} ${API.money} ${API.moneyemoji}**`)
                 embed.addField(`✅ Sucesso no upgrade`, `Você gastou **${API.format(total)} ${API.money} ${API.moneyemoji}** e diminuiu o gasto de estamina 🔸 da sua vara de pesca!`)
@@ -130,7 +130,7 @@ module.exports = {
 
                 if (pobj2.rod.profundidade >= pobj2.rod.maxprofundidade) pobj2.rod.profundidade = pobj2.rod.maxprofundidade
 
-                DatabaseManager.set(interaction.user.id, 'players', 'rod', pobj2.rod)
+                API.client.dbset(interaction.user.id, 'players', 'rod', pobj2.rod)
 
                 embed.setColor('#5bff45')
                 .setDescription(`\`${API.company.jobs.formatStars(pobj2.rod.stars)}\`\nGasto por turno: **${pobj2.rod.sta} 🔸**\nProfundidade: **${pobj2.rod.profundidade}m**\nPreço do upgrade: **${total} ${API.money} ${API.moneyemoji}**`)

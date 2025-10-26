@@ -39,8 +39,8 @@ module.exports = {
             embed.fields = [];
             if (b && !b.deferred) b.deferUpdate().then().catch(console.error);
 
-            await DatabaseManager.increment(API.id, 'globals', 'totaldonates', donate);
-            await DatabaseManager.increment(API.id, 'globals', 'donates', 1);
+            await API.client.dbincrement(API.id, 'globals', 'totaldonates', donate);
+            await API.client.dbincrement(API.id, 'globals', 'donates', 1);
 
             let commandfile = API.client.commands.get('mvp')
             await commandfile.execute(API, interaction);

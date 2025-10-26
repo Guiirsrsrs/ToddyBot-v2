@@ -38,7 +38,7 @@ frames.has = async function (user_id, frameId) {
     try {
         const filter = { user_id: user_id };
         const options = { projection: { frames: 1 } };
-        const playerDoc = await DatabaseManager.findOne('players', filter, options);
+        const playerDoc = await API.client.db.findOne('players', filter, options);
         // Compara como string
         return playerDoc?.frames?.includes(String(frameId)) || false;
     } catch (err) {
@@ -81,7 +81,7 @@ frames.add = async function (user_id, frameId) {
                  }
              }
          };
-        const result = await DatabaseManager.updateOne('players', filter, update, { upsert: true });
+        const result = await API.client.db.updateOne('players', filter, update, { upsert: true });
 
         if (result && (result.modifiedCount > 0 || result.upsertedCount > 0)) {
             return `Moldura ${frameToAdd} adicionada com sucesso.`;
@@ -120,7 +120,7 @@ frames.reforge = async function (user_id, frameId) {
 
         // Passo 1: Remover a moldura do array (se existir)
         const pullUpdate = { $pull: { frames: frameToReforge } };
-        await DatabaseManager.updateOne('players', filter, pullUpdate); // Executa a remoção
+        await API.client.db.updateOne('players', filter, pullUpdate); // Executa a remoção
 
         // Passo 2: Adicionar a moldura de volta no início
         const pushUpdate = {
@@ -131,12 +131,12 @@ frames.reforge = async function (user_id, frameId) {
                 }
             }
         };
-        const pushResult = await DatabaseManager.updateOne('players', filter, pushUpdate); // Adiciona no início (upsert não necessário aqui)
+        const pushResult = await API.client.db.updateOne('players', filter, pushUpdate); // Adiciona no início (upsert não necessário aqui)
 
         if (pushResult && pushResult.modifiedCount > 0) {
              // Verificar se o item "0" (sem moldura) precisa ser removido, como na lógica antiga
              // Isso pode ser feito com outro $pull ou ajustando o array antes do $set final
-             // await DatabaseManager.updateOne(filter, { $pull: { frames: '0' } }); // Exemplo
+             // await API.client.db.updateOne(filter, { $pull: { frames: '0' } }); // Exemplo
 
             return `Moldura ${frameToReforge} reequipada com sucesso (movida para o início).`;
         } else {
@@ -168,7 +168,7 @@ frames.remove = async function (user_id, frameId) {
 
         const filter = { user_id: user_id };
         const update = { $pull: { frames: frameToRemove } }; // Remove do array
-        const result = await DatabaseManager.updateOne('players', filter, update);
+        const result = await API.client.db.updateOne('players', filter, update);
 
         if (result && result.modifiedCount > 0) {
             return `Moldura ${frameToRemove} removida com sucesso.`;

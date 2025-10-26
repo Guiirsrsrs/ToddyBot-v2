@@ -90,8 +90,8 @@ module.exports = {
                     API.eco.bank.add(interaction.user.id, total);
                     API.eco.money.remove(interaction.user.id, total2);
                     API.eco.addToHistory(interaction.user.id, `📥 Depósito | + ${API.format(total)} ${API.moneyemoji}`)
-                    let obj = await DatabaseManager.get(interaction.user.id, "players");
-                    DatabaseManager.set(interaction.user.id, "players", "dep", obj.dep + 1);
+                    let obj = await API.client.dbget(interaction.user.id, "players");
+                    API.client.dbset(interaction.user.id, "players", "dep", obj.dep + 1);
                     API.eco.money.globaladd(taxa)
                 }
             }

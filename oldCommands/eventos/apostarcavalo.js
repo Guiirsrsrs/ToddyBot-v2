@@ -97,7 +97,7 @@ module.exports = {
                     break;
             }
 
-            const globalobj = await DatabaseManager.get(API.id, 'globals');
+            const globalobj = await API.client.dbget(API.id, 'globals');
 
             const globalevents = globalobj.events;
 
@@ -108,11 +108,11 @@ module.exports = {
             API.events.race.apostas[apostastring].push({ id: interaction.user.id, aposta: total })
 
             if (globalevents == null) {
-                DatabaseManager.set(API.id, 'globals', "events", {
+                API.client.dbset(API.id, 'globals', "events", {
                     "race": API.events.race
                 })
             } else {
-                DatabaseManager.set(API.id, 'globals', "events", {
+                API.client.dbset(API.id, 'globals', "events", {
                     ...globalevents,
                     "race": API.events.race
                 })

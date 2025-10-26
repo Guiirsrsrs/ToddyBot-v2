@@ -17,7 +17,7 @@ module.exports = {
 
         const id = interaction.options.getInteger('id-caixa');
 
-        const obj = await DatabaseManager.get(interaction.user.id, 'storage');
+        const obj = await API.client.dbget(interaction.user.id, 'storage');
 
         if (obj[`crate:${id}`] == null || obj[`crate:${id}`] < 1 || obj[`crate:${id}`] == undefined) {
             const embedtemp = await API.sendError(interaction, `Você não possui uma caixa com este id!\nUtilize \`/mochila\` para visualizar suas caixas`, `recc 1`)

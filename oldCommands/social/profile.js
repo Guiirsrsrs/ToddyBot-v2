@@ -38,9 +38,9 @@ module.exports = {
 
         await interaction.reply({ content: `<a:loading:736625632808796250> Carregando informações do perfil` })
 
-        const playerobj = await DatabaseManager.get(member.id, 'machines')
-        const obj = await DatabaseManager.get(member.id, "players")
-        const players_utils = await DatabaseManager.get(member.id, "players_utils")
+        const playerobj = await API.client.dbget(member.id, 'machines')
+        const obj = await API.client.dbget(member.id, "players")
+        const players_utils = await API.client.dbget(member.id, "players_utils")
         const mastery = await API.playerUtils.getMastery(member.id)
         const maqimg = API.shopExtension.getProduct(playerobj.machine).img;
         let bio = obj.bio;

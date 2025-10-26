@@ -171,7 +171,7 @@ module.exports = {
             if (size) obj.size = size
             if (id) obj.id = id
             
-            const globalobj = await DatabaseManager.get(API.id, 'globals');
+            const globalobj = await API.client.dbget(API.id, 'globals');
 
             const objgkeys = globalobj.keys
             let clist = []
@@ -180,7 +180,7 @@ module.exports = {
             }
             clist.push(obj)
 
-            DatabaseManager.set(API.id, 'globals', 'keys', clist);
+            API.client.dbset(API.id, 'globals', 'keys', clist);
 
             const embed2 = new API.Discord.MessageEmbed()
             .setTitle(`🔑 Nova chave gerada`)

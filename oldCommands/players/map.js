@@ -24,7 +24,7 @@ module.exports = {
         const townname = await API.townExtension.getTownName(interaction.user.id);
         const townnum = await API.townExtension.getTownNumByName(townname);
         const pos = await API.townExtension.getTownPos(interaction.user.id);
-        const res = await DatabaseManager.query('SELECT * FROM companies WHERE loc=$1', [townnum]);
+        const res = await API.client.dbquery('SELECT * FROM companies WHERE loc=$1', [townnum]);
         const hasTreasure = (API.events.treasure.loc != 0 && API.events.treasure.picked == false)
         const hasDuck = (API.events.duck.loc != 0 && API.events.duck.killed == false)
         let content = `Você se localiza na vila **${townname}**\nPopulação: **${API.townExtension.population[townname]} pessoas**\nEmpresas: **${res.rows.length}**\nJogos disponíveis na sua vila: **${API.townExtension.games[await API.townExtension.getTownName(interaction.user.id)].join(', ')}**.`

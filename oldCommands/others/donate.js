@@ -12,7 +12,7 @@ module.exports = {
                 const Discord = API.Discord;
                 const client = API.client;
 
-                const globalobj = await DatabaseManager.get(API.id, 'globals')
+                const globalobj = await API.client.dbget(API.id, 'globals')
 
                 const donates = globalobj.donates
                 const totaldonates = globalobj.totaldonates

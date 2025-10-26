@@ -12,7 +12,7 @@ module.exports = {
 
         const Discord = API.Discord;
 
-        let pobj = await DatabaseManager.get(interaction.user.id, 'players')
+        let pobj = await API.client.dbget(interaction.user.id, 'players')
 
         const check = await API.playerUtils.cooldown.check(interaction.user.id, "landplot");
         if (check) {
@@ -175,7 +175,7 @@ module.exports = {
                 if (b && !b.deferred) b.deferUpdate().then().catch(console.error);
                 embed.fields = [];
 
-                pobj = await DatabaseManager.get(interaction.user.id, 'players')
+                pobj = await API.client.dbget(interaction.user.id, 'players')
 
                 const money = await API.eco.money.get(interaction.user.id);
       
@@ -207,7 +207,7 @@ module.exports = {
   
                 plots[townnum] = plot
   
-                DatabaseManager.set(interaction.user.id, 'players', 'plots', plots)
+                API.client.dbset(interaction.user.id, 'players', 'plots', plots)
     
                 embed.setColor('#5bff45');
                 embed.addField('✅ Terreno adquirido', `
@@ -252,7 +252,7 @@ module.exports = {
 
             collector.resetTimer()
 
-            let pobj = await DatabaseManager.get(interaction.user.id, 'players')
+            let pobj = await API.client.dbget(interaction.user.id, 'players')
             let plotReturns = await makeEmbed(pobj)
 
             let plot = plotReturns.plot
@@ -280,14 +280,14 @@ module.exports = {
                 let plots = pobj.plots
                 plots[townnum].area = plot.area+10
 
-                await DatabaseManager.set(interaction.user.id, 'players', 'plots', plots)
+                await API.client.dbset(interaction.user.id, 'players', 'plots', plots)
 
                 API.playerUtils.cooldown.set(interaction.user.id, "landplot", 0);
 
                 API.eco.points.remove(interaction.user.id, priceupgrade);
                 await API.eco.addToHistory(interaction.user.id, `Upgrade <:terreno:765944910179336202> | - ${priceupgrade} ${API.money2emoji}`)
 
-                pobj = await DatabaseManager.get(interaction.user.id, 'players')
+                pobj = await API.client.dbget(interaction.user.id, 'players')
                 plotReturns = await makeEmbed(pobj)
                 components = plotReturns.components
 
@@ -309,14 +309,14 @@ module.exports = {
                     return;
                 }
 
-                let pobj2 = await DatabaseManager.get(interaction.user.id, 'machines')
+                let pobj2 = await API.client.dbget(interaction.user.id, 'machines')
 
                 allplots[townnum].plants.splice([parseInt(b.customId)-1], 1)
                 if (allplots[townnum].plants.length == 0) {
                     delete allplots[townnum].plants
                 }
 
-                await DatabaseManager.set(interaction.user.id, 'players', 'plots', allplots)
+                await API.client.dbset(interaction.user.id, 'players', 'plots', allplots)
 
                 let total = Math.round(selectedplant.qnt*selectedplant.seed.price*pobj2.level*1.5)
                 
@@ -342,7 +342,7 @@ module.exports = {
                 
                 let score = ((API.company.stars.gen()*2.5).toFixed(2)) 
 
-                pobj = await DatabaseManager.get(interaction.user.id, 'players')
+                pobj = await API.client.dbget(interaction.user.id, 'players')
                 plotReturns = await makeEmbed(pobj)
                 components = plotReturns.components
 

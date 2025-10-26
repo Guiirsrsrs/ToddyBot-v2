@@ -226,14 +226,14 @@ API.getBotInfoProperties = async function() {
     let dbsize = 'N/A';
     try {
         const text =  `SELECT pg_size_pretty(pg_database_size(current_database()));`; // Use current_database()
-        const res = await DatabaseManager.query(text);
+        const res = await API.client.dbquery(text);
         dbsize = res.rows[0]["pg_size_pretty"];
     } catch (dbError) {
         console.error("Failed to get DB size:", dbError);
     }
 
 
-    const globalsObj = await DatabaseManager.get(app.id, 'globals') || { totalcmd: 0 }; // Default if not found
+    const globalsObj = await API.client.dbget(app.id, 'globals') || { totalcmd: 0 }; // Default if not found
 
     // ATUALIZAÇÃO v14: Use API.EmbedBuilder
     const embed = new API.EmbedBuilder();
@@ -275,7 +275,7 @@ API.getBotInfoProperties = async function() {
 API.setCompanieInfo = async function (user_id, company, string, value) {
     try {
         // Ensure the company row exists or insert it
-        await DatabaseManager.query(
+        await API.client.dbquery(
             `INSERT INTO companies(company_id, user_id) VALUES($1, $2) ON CONFLICT (company_id) DO NOTHING;`, // Assume company_id is unique key
             [company, user_id]
         );
@@ -284,7 +284,7 @@ API.setCompanieInfo = async function (user_id, company, string, value) {
         // IMPORTANT: Avoid string interpolation for column names if possible. If 'string' comes from user input, VALIDATE IT STRICTLY.
         // Assuming 'string' is a safe, known column name here.
         const text = `UPDATE companies SET "${string}" = $3 WHERE company_id = $1;`; // Use company_id as primary key for update
-        await DatabaseManager.query(text, [company, value]);
+        await API.client.dbquery(text, [company, value]);
 
     } catch (err) {
         console.error(`Error in setCompanieInfo (user: ${user_id}, company: ${company}, field: ${string}):`, err.stack);

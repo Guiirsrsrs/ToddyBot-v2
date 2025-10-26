@@ -136,7 +136,7 @@ const storage = {
  * @returns {Promise<number>} Capacidade máxima.
  */
 storage.getMax = async function(user_id) {
-    const doc = await DatabaseManager.findOne('storage', { user_id: user_id }, { projection: { storage: 1 } });
+    const doc = await API.client.db.findOne('storage', { user_id: user_id }, { projection: { storage: 1 } });
     const storageLevel = doc?.storage || 1; // Nível 1 como padrão se não existir
     return storageLevel * storage.sizeperlevel;
 };
@@ -147,7 +147,7 @@ storage.getMax = async function(user_id) {
  * @returns {Promise<number>} Quantidade total de itens no storage.
  */
 storage.getSize = async function(user_id) {
-    const doc = await DatabaseManager.findOne('storage', { user_id: user_id });
+    const doc = await API.client.db.findOne('storage', { user_id: user_id });
     if (!doc) return 0; // Se não tem documento, tamanho é 0
 
     let currentSize = 0;
@@ -168,7 +168,7 @@ storage.getSize = async function(user_id) {
  * @returns {Promise<number>} Preço total para o upgrade.
  */
 storage.getPrice = async function(user_id, levelsToUp = 1, currentMaxSizeOverride = null) {
-    const doc = await DatabaseManager.findOne('storage', { user_id: user_id }, { projection: { storage: 1 } });
+    const doc = await API.client.db.findOne('storage', { user_id: user_id }, { projection: { storage: 1 } });
     let currentLevel = doc?.storage || 1; // Nível 1 como padrão
 
     let totalPrice = 0;
@@ -255,7 +255,7 @@ maqExtension.forceCot = async function() {
  * @returns {Promise<number|null>} ID da máquina ou null.
  */
 maqExtension.get = async function(user_id) {
-  const doc = await DatabaseManager.findOne('machines', { user_id: user_id }, { projection: { machine: 1 } });
+  const doc = await API.client.db.findOne('machines', { user_id: user_id }, { projection: { machine: 1 } });
   // Retorna o ID da máquina (pode ser 0 ou número) ou null se não houver doc
   return doc?.machine ?? null; // Usa ?? para retornar null se doc for null ou undefined
 };
@@ -284,8 +284,8 @@ const ENERGY_REGEN_INTERVAL_SECONDS = 60; // Exemplo: 1 energia a cada 60 segund
  * @returns {Promise<{currentEnergy: number, maxEnergy: number, timeToFullMs: number}>} Energia atual, máxima e tempo para encher.
  */
 maqExtension.getEnergy = async function(user_id) {
-    const machineDoc = await DatabaseManager.findOne('machines', { user_id: user_id });
-    // const playerDoc = await DatabaseManager.findOne('players', { user_id: user_id }, { projection: { perm: 1 } }); // Permissão não usada na regen aqui
+    const machineDoc = await API.client.db.findOne('machines', { user_id: user_id });
+    // const playerDoc = await API.client.db.findOne('players', { user_id: user_id }, { projection: { perm: 1 } }); // Permissão não usada na regen aqui
 
     // Valores Padrão
     let currentEnergy = 0;
@@ -318,7 +318,7 @@ maqExtension.getEnergy = async function(user_id) {
 
     if (secondsPassed > 0) {
         // Obter taxa de regeneração baseada na permissão (lógica antiga)
-        const playerDocPermCheck = await DatabaseManager.findOne('players', { user_id: user_id }, { projection: { perm: 1 } });
+        const playerDocPermCheck = await API.client.db.findOne('players', { user_id: user_id }, { projection: { perm: 1 } });
         const permLevel = playerDocPermCheck?.perm || 1; // Padrão 1
         const regenInterval = maqExtension.recoverenergy[permLevel] || ENERGY_REGEN_INTERVAL_SECONDS; // Usa tabela ou padrão
 
@@ -327,14 +327,14 @@ maqExtension.getEnergy = async function(user_id) {
         if (energyRegenerated > 0) {
             currentEnergy = Math.min(maxEnergy, currentEnergy + energyRegenerated);
             // Atualiza o timestamp no DB para evitar recalcular regen já aplicada? Opcional.
-            // await DatabaseManager.updateOne('machines', { user_id: user_id }, { $set: { currentEnergy: currentEnergy, lastEnergyUpdate: now } });
+            // await API.client.db.updateOne('machines', { user_id: user_id }, { $set: { currentEnergy: currentEnergy, lastEnergyUpdate: now } });
             // Se não atualizar aqui, a próxima chamada a `set` ou `remove` deve atualizar.
         }
     }
 
     // Calcula tempo para ficar cheia
     const energyNeeded = maxEnergy - currentEnergy;
-    const playerDocPermCheck = await DatabaseManager.findOne('players', { user_id: user_id }, { projection: { perm: 1 } });
+    const playerDocPermCheck = await API.client.db.findOne('players', { user_id: user_id }, { projection: { perm: 1 } });
     const permLevel = playerDocPermCheck?.perm || 1; // Padrão 1
     const regenInterval = maqExtension.recoverenergy[permLevel] || ENERGY_REGEN_INTERVAL_SECONDS; // Usa tabela ou padrão
     const secondsToFull = energyNeeded > 0 ? energyNeeded * regenInterval : 0;
@@ -360,7 +360,7 @@ maqExtension.setEnergy = async function(user_id, value) {
 
     const filter = { user_id: user_id };
     const update = { $set: { currentEnergy: energyValue, lastEnergyUpdate: Date.now() } };
-    await DatabaseManager.updateOne('machines', filter, update, { upsert: true }); // Upsert para criar se não existir
+    await API.client.db.updateOne('machines', filter, update, { upsert: true }); // Upsert para criar se não existir
 };
 
 /**
@@ -377,7 +377,7 @@ maqExtension.removeEnergy = async function(user_id, value) {
 
     const filter = { user_id: user_id };
     const update = { $set: { currentEnergy: newEnergy, lastEnergyUpdate: Date.now() } };
-    await DatabaseManager.updateOne('machines', filter, update, { upsert: true }); // Salva e atualiza timestamp
+    await API.client.db.updateOne('machines', filter, update, { upsert: true }); // Salva e atualiza timestamp
 };
 
 /**
@@ -387,7 +387,7 @@ maqExtension.removeEnergy = async function(user_id, value) {
  */
 maqExtension.setEnergyMax = async function(user_id, value) {
   const maxValue = Math.max(1, Number(value) || MAX_ENERGY_BASE); // Mínimo 1
-  await DatabaseManager.set(user_id, 'machines', 'energymax', maxValue, 'user_id'); // Usa o set genérico
+  await API.client.dbset(user_id, 'machines', 'energymax', maxValue, 'user_id'); // Usa o set genérico
 };
 
 // --- Funções Adicionais ---
@@ -415,7 +415,7 @@ maqExtension.getSlotMax = function(level, hasMvp) {
  * @returns {Promise<number>} Profundidade máxima.
  */
 maqExtension.getDepth = async function(user_id) {
-    const machineDoc = await DatabaseManager.findOne('machines', { user_id: user_id }, { projection: { machine: 1, slots: 1 } });
+    const machineDoc = await API.client.db.findOne('machines', { user_id: user_id }, { projection: { machine: 1, slots: 1 } });
     const machineId = machineDoc?.machine || 0;
     const equippedChips = machineDoc?.slots || [];
 
@@ -440,7 +440,7 @@ maqExtension.getDepth = async function(user_id) {
  * @returns {Promise<object|null>} Objeto com dados de manutenção ou null.
  */
 maqExtension.getMaintenance = async function(user_id, getDefault = false) { // getDefault não é mais necessário
-    const machineDoc = await DatabaseManager.findOne('machines', { user_id: user_id });
+    const machineDoc = await API.client.db.findOne('machines', { user_id: user_id });
     if (!machineDoc || !machineDoc.machine) return null; // Retorna null se não houver máquina
 
     const machineProduct = API.shopExtension.getProduct(machineDoc.machine);

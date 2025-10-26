@@ -68,7 +68,7 @@ module.exports = {
             }
         }
 
-        let machineobj = await DatabaseManager.get(interaction.user.id, 'machines')
+        let machineobj = await API.client.dbget(interaction.user.id, 'machines')
         let playerlevel = machineobj.level;
 
         let player = {
@@ -333,7 +333,7 @@ ${currinteraction ? currinteraction : ''}
 
                 const avatarurl = interaction.user.displayAvatarURL({ format: 'png', dynamic: true, size: 1024 })
 
-                let machineobj = await DatabaseManager.get(interaction.user.id, 'machines')
+                let machineobj = await API.client.dbget(interaction.user.id, 'machines')
                 let playerlevel = machineobj.level;
 
                 const equipsdata = [

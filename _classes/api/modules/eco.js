@@ -2,7 +2,7 @@
 
 // Importar API centralizada e DatabaseManager (ajustar caminhos se necessário)
 const API = require('../index');
-const DatabaseManager = API.DatabaseManager; // Usar a instância já criada
+const DatabaseManager = new API.DatabaseManager();
 const fs = require('fs');
 const path = require('path');
 const insertLine = require('insert-line');
@@ -28,7 +28,7 @@ function randomString(length) {
  */
 tp.get = async function (user_id) {
     const filter = { user_id: user_id };
-    let doc = await DatabaseManager.findOne('players_utils', filter);
+    let doc = await API.client.db.findOne('players_utils', filter);
 
     let inviteData = doc?.invite; // Tenta obter os dados existentes
 
@@ -45,7 +45,7 @@ tp.get = async function (user_id) {
         };
 
         // Salva os novos dados no banco de dados
-        await DatabaseManager.updateOne('players_utils', filter, { $set: { invite: inviteData } }, { upsert: true });
+        await API.client.db.updateOne('players_utils', filter, { $set: { invite: inviteData } }, { upsert: true });
 
         // Retorna os dados recém-criados
         return inviteData;
@@ -63,7 +63,7 @@ tp.get = async function (user_id) {
 tp.check = async function (code) {
     // Busca otimizada diretamente pelo código
     const filter = { 'invite.code': code }; // Busca dentro do subdocumento 'invite'
-    const doc = await DatabaseManager.findOne('players_utils', filter, { projection: { user_id: 1 } }); // Pega apenas o user_id
+    const doc = await API.client.db.findOne('players_utils', filter, { projection: { user_id: 1 } }); // Pega apenas o user_id
 
     if (doc) {
         return { exists: true, owner: doc.user_id };
@@ -84,7 +84,7 @@ tp.add = async function (user_id, pointsToAdd) {
     // Poderia ser feito com pipelines de agregação, mas $inc com upsert geralmente cria a estrutura.
     // Vamos garantir que 'invite' exista primeiro (get faz isso)
     await tp.get(user_id);
-    await DatabaseManager.updateOne('players_utils', filter, { $inc: { 'invite.points': value } }, { upsert: true });
+    await API.client.db.updateOne('players_utils', filter, { $inc: { 'invite.points': value } }, { upsert: true });
 };
 
 /**
@@ -107,7 +107,7 @@ tp.set = async function (user_id, pointsValue) {
     const value = Number(pointsValue) || 0;
     // Garante que o campo 'invite' exista
     await tp.get(user_id);
-    await DatabaseManager.updateOne('players_utils', filter, { $set: { 'invite.points': value } }, { upsert: true });
+    await API.client.db.updateOne('players_utils', filter, { $set: { 'invite.points': value } }, { upsert: true });
 };
 
 
@@ -120,7 +120,7 @@ const bank = {};
  * @returns {Promise<number>} Saldo do banco (padrão 0).
  */
 bank.get = async function (user_id) {
-    const doc = await DatabaseManager.findOne('players', { user_id: user_id }, { projection: { bank: 1 } });
+    const doc = await API.client.db.findOne('players', { user_id: user_id }, { projection: { bank: 1 } });
     return doc?.bank || 0; // Retorna 0 se doc ou bank não existir
 };
 
@@ -130,7 +130,7 @@ bank.get = async function (user_id) {
  * @param {number} moneyToAdd - Quantidade a adicionar.
  */
 bank.add = async function (user_id, moneyToAdd) {
-    await DatabaseManager.increment(user_id, 'players', 'bank', moneyToAdd, 'user_id');
+    await API.client.dbincrement(user_id, 'players', 'bank', moneyToAdd, 'user_id');
 };
 
 /**
@@ -139,7 +139,7 @@ bank.add = async function (user_id, moneyToAdd) {
  * @param {number} moneyToRemove - Quantidade a remover.
  */
 bank.remove = async function (user_id, moneyToRemove) {
-    await DatabaseManager.increment(user_id, 'players', 'bank', -moneyToRemove, 'user_id');
+    await API.client.dbincrement(user_id, 'players', 'bank', -moneyToRemove, 'user_id');
 };
 
 /**
@@ -149,7 +149,7 @@ bank.remove = async function (user_id, moneyToRemove) {
  */
 bank.set = async function (user_id, moneyValue) {
     const value = parseInt(moneyValue) || 0; // Garante que é inteiro
-    await DatabaseManager.set(user_id, 'players', 'bank', value, 'user_id');
+    await API.client.dbset(user_id, 'players', 'bank', value, 'user_id');
 };
 
 
@@ -162,7 +162,7 @@ const points = {};
  * @returns {Promise<number>} Quantidade de cristais (padrão 0).
  */
 points.get = async function (user_id) {
-    const doc = await DatabaseManager.findOne('players', { user_id: user_id }, { projection: { points: 1 } });
+    const doc = await API.client.db.findOne('players', { user_id: user_id }, { projection: { points: 1 } });
     return doc?.points || 0;
 };
 
@@ -172,7 +172,7 @@ points.get = async function (user_id) {
  * @param {number} pointsToAdd - Quantidade a adicionar.
  */
 points.add = async function (user_id, pointsToAdd) {
-    await DatabaseManager.increment(user_id, 'players', 'points', pointsToAdd, 'user_id');
+    await API.client.dbincrement(user_id, 'players', 'points', pointsToAdd, 'user_id');
 };
 
 /**
@@ -181,7 +181,7 @@ points.add = async function (user_id, pointsToAdd) {
  * @param {number} pointsToRemove - Quantidade a remover.
  */
 points.remove = async function (user_id, pointsToRemove) {
-    await DatabaseManager.increment(user_id, 'players', 'points', -pointsToRemove, 'user_id');
+    await API.client.dbincrement(user_id, 'players', 'points', -pointsToRemove, 'user_id');
 };
 
 /**
@@ -190,7 +190,7 @@ points.remove = async function (user_id, pointsToRemove) {
  * @param {number} pointsValue - Quantidade exata.
  */
 points.set = async function (user_id, pointsValue) {
-    await DatabaseManager.set(user_id, 'players', 'points', Number(pointsValue) || 0, 'user_id');
+    await API.client.dbset(user_id, 'players', 'points', Number(pointsValue) || 0, 'user_id');
 };
 
 
@@ -203,7 +203,7 @@ const money = {};
  * @returns {Promise<number>} Quantidade de moedas (padrão 0).
  */
 money.get = async function (user_id) {
-    const doc = await DatabaseManager.findOne('players', { user_id: user_id }, { projection: { money: 1 } });
+    const doc = await API.client.db.findOne('players', { user_id: user_id }, { projection: { money: 1 } });
     return doc?.money || 0;
 };
 
@@ -213,7 +213,7 @@ money.get = async function (user_id) {
  * @param {number} moneyToAdd - Quantidade a adicionar.
  */
 money.add = async function (user_id, moneyToAdd) {
-    await DatabaseManager.increment(user_id, 'players', 'money', moneyToAdd, 'user_id');
+    await API.client.dbincrement(user_id, 'players', 'money', moneyToAdd, 'user_id');
 };
 
 /**
@@ -231,7 +231,7 @@ money.globaladd = async function (moneyToAdd) {
  * @param {number} moneyToRemove - Quantidade a remover.
  */
 money.remove = async function (user_id, moneyToRemove) {
-    await DatabaseManager.increment(user_id, 'players', 'money', -moneyToRemove, 'user_id');
+    await API.client.dbincrement(user_id, 'players', 'money', -moneyToRemove, 'user_id');
 };
 
 /**
@@ -250,7 +250,7 @@ money.globalremove = async function (moneyToRemove) {
  */
 money.set = async function (user_id, moneyValue) {
     const value = parseInt(Math.round(moneyValue)) || 0; // Garante que é inteiro
-    await DatabaseManager.set(user_id, 'players', 'money', value, 'user_id');
+    await API.client.dbset(user_id, 'players', 'money', value, 'user_id');
 };
 
 
@@ -263,7 +263,7 @@ const token = {};
  * @returns {Promise<number>} Quantidade de fichas (padrão 0).
  */
 token.get = async function (user_id) {
-    const doc = await DatabaseManager.findOne('players', { user_id: user_id }, { projection: { token: 1 } });
+    const doc = await API.client.db.findOne('players', { user_id: user_id }, { projection: { token: 1 } });
     return doc?.token || 0;
 };
 
@@ -273,7 +273,7 @@ token.get = async function (user_id) {
  * @param {number} tokenToAdd - Quantidade a adicionar.
  */
 token.add = async function (user_id, tokenToAdd) {
-    await DatabaseManager.increment(user_id, 'players', 'token', tokenToAdd, 'user_id');
+    await API.client.dbincrement(user_id, 'players', 'token', tokenToAdd, 'user_id');
 };
 
 /**
@@ -282,7 +282,7 @@ token.add = async function (user_id, tokenToAdd) {
  * @param {number} tokenToRemove - Quantidade a remover.
  */
 token.remove = async function (user_id, tokenToRemove) {
-    await DatabaseManager.increment(user_id, 'players', 'token', -tokenToRemove, 'user_id');
+    await API.client.dbincrement(user_id, 'players', 'token', -tokenToRemove, 'user_id');
 };
 
 /**
@@ -291,7 +291,7 @@ token.remove = async function (user_id, tokenToRemove) {
  * @param {number} tokenValue - Quantidade exata.
  */
 token.set = async function (user_id, tokenValue) {
-    await DatabaseManager.set(user_id, 'players', 'token', Number(tokenValue) || 0, 'user_id');
+    await API.client.dbset(user_id, 'players', 'token', Number(tokenValue) || 0, 'user_id');
 };
 
 

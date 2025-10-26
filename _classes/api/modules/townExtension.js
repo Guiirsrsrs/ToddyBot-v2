@@ -1,7 +1,7 @@
 // _classes/api/modules/townExtension.js
 
-const API = require('../index'); // Importa API centralizada
-const DatabaseManager = API.DatabaseManager; // Usa a instância do DBManager
+// REMOVIDO: const API = require('../index');
+// REMOVIDO: const DatabaseManager = API.DatabaseManager;
 const config = require('../../config'); // Importa config se getConfig for usado
 require('colors'); // Para logs
 
@@ -37,41 +37,48 @@ const townExtension = {
 };
 
 // --- Carregamento Inicial da População ---
-(async () => {
+// Convertido de IIFE para uma função 'init' exportada
+townExtension.init = async function() {
+    // Requer a API DENTRO da função
+    const API = require('../index');
     console.log("[TownExtension] Carregando população inicial do banco de dados...".yellow);
     try {
         // Busca todos os documentos que têm 'loc' definido e diferente de 0
         const filter = { loc: { $exists: true, $ne: 0, $in: [1, 2, 3, 4] } };
         // Pega apenas o campo 'loc' para otimizar
         const options = { projection: { loc: 1 } };
-        const townDocs = await DatabaseManager.findMany('towns', filter, options);
+        // Acessa API.client.db AQUI
+        const townDocs = await API.client.db.findMany('towns', filter, options);
 
         if (townDocs && townDocs.length > 0) {
             // Zera a população antes de recalcular
-            for (const townName in townExtension.population) {
-                townExtension.population[townName] = 0;
+            for (const townName in this.population) { // Usa 'this'
+                this.population[townName] = 0;
             }
             // Calcula a população
             for (const doc of townDocs) {
-                const townName = townExtension.getTownNameByNum(doc.loc);
-                if (townName && townExtension.population.hasOwnProperty(townName)) {
-                    townExtension.population[townName]++;
+                // Usa this
+                const townName = this.getTownNameByNum(doc.loc);
+                if (townName && this.population.hasOwnProperty(townName)) {
+                    this.population[townName]++;
                 }
             }
-            console.log("[TownExtension] População inicial carregada:".cyan, townExtension.population);
+            console.log("[TownExtension] População inicial carregada:".cyan, this.population); // Usa 'this'
         } else {
             console.warn("[TownExtension] Nenhum documento encontrado na coleção 'towns' para calcular população inicial.".yellow);
         }
     } catch (err) {
         console.error("[ERRO][TownExtension] Falha ao carregar população inicial:", err);
         // Não trava o bot, mas a população pode ficar incorreta até ser atualizada
+        // Verifica se API.client existe antes de emitir erro
+        if (API.client?.emit) API.client.emit('error', new Error(`TownInit Error: ${err.message}`));
     }
-})();
+};
 
 // --- Funções do Módulo ---
 
 townExtension.getConfig = function() {
-    // Retorna a config importada no topo
+    // Retorna a config importada no topo (não precisa da API)
     return config;
 };
 
@@ -81,19 +88,22 @@ townExtension.getConfig = function() {
  * @returns {Promise<number>} Número da cidade (1-4).
  */
 townExtension.getTownNum = async function(user_id) {
+    // Requer a API DENTRO da função
+    const API = require('../index');
     const filter = { user_id: user_id };
-    // Busca apenas o campo 'loc'
-    const doc = await DatabaseManager.findOne('towns', filter, { projection: { loc: 1 } });
+    // Busca apenas o campo 'loc' (Usa API.client.db)
+    const doc = await API.client.db.findOne('towns', filter, { projection: { loc: 1 } });
 
     let currentLoc = doc?.loc; // Obtém loc se existir
 
     // Se não tem documento, não tem 'loc' ou 'loc' é 0 (ou inválido), atribui uma nova
     if (!currentLoc || ![1, 2, 3, 4].includes(currentLoc)) {
-        const newLoc = API.utils.random(1, 4); // Usa a função random da API
+        // Usa API.utils
+        const newLoc = API.utils.random(1, 4);
         console.log(`[TownExtension] Atribuindo cidade ${newLoc} para usuário ${user_id}.`);
 
-        // Tenta atualizar ou inserir a nova localização
-        const updateResult = await DatabaseManager.updateOne(
+        // Tenta atualizar ou inserir a nova localização (Usa API.client.db)
+        const updateResult = await API.client.db.updateOne(
             'towns',
             filter, // Filtro pelo user_id
             { $set: { loc: newLoc } }, // Define a nova localização
@@ -102,14 +112,16 @@ townExtension.getTownNum = async function(user_id) {
 
         // Atualiza a contagem de população em memória (apenas se a atualização foi bem-sucedida)
         if (updateResult && (updateResult.modifiedCount > 0 || updateResult.upsertedCount > 0)) {
-            const townName = townExtension.getTownNameByNum(newLoc);
-            if (townName) {
-                townExtension.population[townName]++;
-                 console.log(`[TownExtension] População de ${townName} atualizada para ${townExtension.population[townName]}.`);
+            // Usa 'this'
+            const townName = this.getTownNameByNum(newLoc);
+            if (townName && this.population.hasOwnProperty(townName)) {
+                this.population[townName]++;
+                 console.log(`[TownExtension] População de ${townName} atualizada para ${this.population[townName]}.`); // Usa 'this'
             }
         } else {
              console.error(`[ERRO][TownExtension] Falha ao salvar a nova cidade ${newLoc} para usuário ${user_id}.`);
              // Considerar retornar um valor padrão ou lançar erro? Por ora, retorna a newLoc
+             if (API.client?.emit) API.client.emit('error', new Error(`TownSet Error user ${user_id}`));
         }
         return newLoc;
     } else {
@@ -123,8 +135,11 @@ townExtension.getTownNum = async function(user_id) {
  * @param {number} townNum - Número da cidade (1-4).
  * @returns {Promise<object>} Objeto com { x, y }.
  */
-townExtension.getPosByTownNum = async function(townNum) { // Tornada async para consistência, embora não precise
+townExtension.getPosByTownNum = async function(townNum) {
+    // Requer a API DENTRO da função
+    const API = require('../index');
     const pos = { x: 0, y: 0 };
+    // Usa API.utils
     switch (townNum) {
         case 1: // Nishigami
             pos.x = API.utils.random(70, 130);
@@ -156,8 +171,10 @@ townExtension.getPosByTownNum = async function(townNum) { // Tornada async para 
  * @returns {Promise<object>} Objeto com { x, y }.
  */
 townExtension.getTownPos = async function(user_id) {
-    const townNum = await townExtension.getTownNum(user_id);
-    return await townExtension.getPosByTownNum(townNum);
+    // Chama getTownNum usando 'this' (que vai requerer API internamente)
+    const townNum = await this.getTownNum(user_id);
+    // Chama getPosByTownNum usando 'this' (que vai requerer API internamente)
+    return await this.getPosByTownNum(townNum);
 };
 
 /**
@@ -166,8 +183,10 @@ townExtension.getTownPos = async function(user_id) {
  * @returns {Promise<string>} Nome da cidade.
  */
 townExtension.getTownName = async function(user_id) {
-    const townNum = await townExtension.getTownNum(user_id); // Reutiliza getTownNum que já atribui se necessário
-    return townExtension.getTownNameByNum(townNum); // Usa a função de mapeamento
+    // Chama getTownNum usando 'this'
+    const townNum = await this.getTownNum(user_id);
+    // Chama getTownNameByNum usando 'this' (não precisa da API)
+    return this.getTownNameByNum(townNum);
 };
 
 /**
@@ -176,8 +195,10 @@ townExtension.getTownName = async function(user_id) {
  * @returns {Promise<number>} A taxa (2 ou 5).
  */
 townExtension.getTownTax = async function(user_id) {
-    // Busca apenas o campo 'mvp' da coleção 'players'
-    const doc = await DatabaseManager.findOne('players', { user_id: user_id }, { projection: { mvp: 1 } });
+    // Requer a API DENTRO da função
+    const API = require('../index');
+    // Busca apenas o campo 'mvp' da coleção 'players' (Usa API.client.db)
+    const doc = await API.client.db.findOne('players', { user_id: user_id }, { projection: { mvp: 1 } });
 
     // Verifica se tem MVP ativo (assumindo que mvp é timestamp > 0 ou Date > now)
     // Adapte a lógica de verificação do MVP se for diferente
@@ -192,7 +213,8 @@ townExtension.getTownTax = async function(user_id) {
  * @returns {string|undefined} Nome da cidade ou undefined se inválido.
  */
 townExtension.getTownNameByNum = function(townNum) {
-    return townExtension._townNames[townNum];
+    // Não precisa da API
+    return this._townNames[townNum]; // Usa 'this'
 };
 
 /**
@@ -201,9 +223,10 @@ townExtension.getTownNameByNum = function(townNum) {
  * @returns {number} Número da cidade (1-4) ou 0 se inválido.
  */
 townExtension.getTownNumByName = function(name) {
+    // Não precisa da API
     if (typeof name !== 'string') return 0;
     const normalizedName = name.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
-    return townExtension._townNumbers[normalizedName] || 0; // Retorna 0 se não encontrar
+    return this._townNumbers[normalizedName] || 0; // Usa 'this'
 };
 
 module.exports = townExtension;

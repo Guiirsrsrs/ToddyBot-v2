@@ -86,7 +86,7 @@ async function setRankCache() {
         const text =  `SELECT * FROM ${data.db.table};`
         let array = [];
         try {
-            let res = await DatabaseManager.query(text);
+            let res = await API.client.dbquery(text);
             array = res.rows;
         } catch (err) {
             console.log(err.stack)

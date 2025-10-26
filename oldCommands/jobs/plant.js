@@ -18,7 +18,7 @@ module.exports = {
 
         const Discord = API.Discord;
 
-        let pobj = await DatabaseManager.get(interaction.user.id, 'players')
+        let pobj = await API.client.dbget(interaction.user.id, 'players')
 
         const area = interaction.options.getInteger('área')
         const quantia = interaction.options.getInteger('quantia')
@@ -97,7 +97,7 @@ module.exports = {
 
         let seed
 
-        let seedstorage = await DatabaseManager.get(interaction.user.id, 'storage')
+        let seedstorage = await API.client.dbget(interaction.user.id, 'storage')
         for (const r of seedobj) {
 
             if (r.displayname.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '') == semente) {
@@ -148,8 +148,8 @@ module.exports = {
         
         allplots[townnum] = plot
 
-        DatabaseManager.set(interaction.user.id, 'players', 'plots', allplots)
-        DatabaseManager.set(interaction.user.id, 'storage', seed.name, seedstorage[seed.displayname.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase()]-quantia)
+        API.client.dbset(interaction.user.id, 'players', 'plots', allplots)
+        API.client.dbset(interaction.user.id, 'storage', seed.name, seedstorage[seed.displayname.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase()]-quantia)
 
         const embed = new Discord.MessageEmbed()
 

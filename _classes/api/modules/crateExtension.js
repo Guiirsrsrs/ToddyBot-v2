@@ -74,7 +74,7 @@ crateExtension.getCrates = async function(user_id) {
     try {
         const filter = { user_id: user_id };
         // Busca o documento storage inteiro, pois as chaves são dinâmicas (crate:*)
-        const storageDoc = await DatabaseManager.findOne('storage', filter);
+        const storageDoc = await API.client.db.findOne('storage', filter);
 
         if (storageDoc) {
             // Itera sobre as definições de caixas carregadas
@@ -193,7 +193,7 @@ crateExtension.give = async function(user_id, crateId, quantity) {
     const update = { $inc: { [crateKey]: amount } }; // Usa $inc para adicionar
 
     try {
-        await DatabaseManager.updateOne('storage', filter, update, { upsert: true }); // Upsert cria o doc storage se não existir
+        await API.client.db.updateOne('storage', filter, update, { upsert: true }); // Upsert cria o doc storage se não existir
         // console.log(`[CrateExt.give] ${amount}x caixa(s) ${idStr} adicionada(s) para ${user_id}.`); // Log opcional
         return true;
     } catch (err) {

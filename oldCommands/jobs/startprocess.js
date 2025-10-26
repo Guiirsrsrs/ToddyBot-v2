@@ -18,11 +18,11 @@ module.exports = {
         
 		const embed = new Discord.MessageEmbed()
 
-        const players_utils = await DatabaseManager.get(interaction.user.id, 'players_utils')
+        const players_utils = await API.client.dbget(interaction.user.id, 'players_utils')
         let processjson = players_utils.process
-        const machines = await DatabaseManager.get(interaction.user.id, 'machines')
+        const machines = await API.client.dbget(interaction.user.id, 'machines')
         const level = machines.level
-        const storage = await DatabaseManager.get(interaction.user.id, 'storage')
+        const storage = await API.client.dbget(interaction.user.id, 'storage')
 
         const quantia = interaction.options.getInteger("quantia")
 
@@ -40,7 +40,7 @@ module.exports = {
 
             processjson = defaultjson
 
-            DatabaseManager.set(interaction.user.id, 'players_utils', 'process', defaultjson)
+            API.client.dbset(interaction.user.id, 'players_utils', 'process', defaultjson)
         }
 
         if (storage['fragmento'] <= quantia) {
@@ -102,8 +102,8 @@ module.exports = {
 
             collector.stop()
             
-            const storage = await DatabaseManager.get(interaction.user.id, 'storage')
-            const players_utils = await DatabaseManager.get(interaction.user.id, 'players_utils')
+            const storage = await API.client.dbget(interaction.user.id, 'storage')
+            const players_utils = await API.client.dbget(interaction.user.id, 'players_utils')
             let processjson = players_utils.process
 
             const tool = (b.customId == 'ferr' ? processjson.tools[0] : processjson.tools[1])
@@ -201,7 +201,7 @@ Potência de Limpeza: [${tool.potency.rangemin}-**${tool.potency.current}**-${to
 
             processjson.in.push(defaultjsonprocess)
 
-            DatabaseManager.set(interaction.user.id, 'players_utils', 'process', processjson)
+            API.client.dbset(interaction.user.id, 'players_utils', 'process', processjson)
 
             const components = reworkButtons(current, true)
 

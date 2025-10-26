@@ -20,7 +20,7 @@ module.exports = {
         let blacklist = [ 'daily2' ]
 
         try {
-            let res2 = await DatabaseManager.query(`SELECT * FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'cooldowns';`);
+            let res2 = await API.client.dbquery(`SELECT * FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'cooldowns';`);
 
             for (i = 1; i < res2.rows.length; i++) {
                 const cd = await API.playerUtils.cooldown.check(member.id, res2.rows[i].column_name)

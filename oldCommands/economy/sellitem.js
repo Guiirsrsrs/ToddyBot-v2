@@ -57,7 +57,7 @@ module.exports = {
         }
 
         let obj = API.itemExtension.getObj();
-        const obj2 = await DatabaseManager.get(interaction.user.id, 'storage')
+        const obj2 = await API.client.dbget(interaction.user.id, 'storage')
 
         if (quantia == 'tudo' && item != null) {
 
@@ -123,7 +123,7 @@ module.exports = {
         total = Math.round(total);
 
         let company;
-        let pobj = await DatabaseManager.get(interaction.user.id, 'players')
+        let pobj = await API.client.dbget(interaction.user.id, 'players')
         
         if (await API.company.check.isWorker(interaction.user.id)) {
             company = await API.company.get.companyById(pobj.company);
@@ -172,7 +172,7 @@ module.exports = {
                 return;
             }
 
-            let obj3 = await DatabaseManager.get(interaction.user.id, 'storage')
+            let obj3 = await API.client.dbget(interaction.user.id, 'storage')
 
             switch (type) {
                 case 0:
@@ -220,7 +220,7 @@ module.exports = {
             }
 
             
-            pobj = await DatabaseManager.get(interaction.user.id, 'players')
+            pobj = await API.client.dbget(interaction.user.id, 'players')
             
             if (await API.company.check.isWorker(interaction.user.id)) {
                 company = await API.company.get.companyById(pobj.company);

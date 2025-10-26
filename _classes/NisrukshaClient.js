@@ -28,6 +28,7 @@ module.exports = class NisrukshaClient extends Client {
         this.validate(options);
         console.log('[CLIENT] Validação concluída.');
 
+        // CRÍTICO: Injetar o client no API ANTES de carregar handlers
         API.client = this;
         API.Discord = require('discord.js');
         console.log('[CLIENT] Objeto API carregado e client injetado.');
@@ -44,23 +45,24 @@ module.exports = class NisrukshaClient extends Client {
         console.log('[CLIENT] Construtor concluído.');
     }
 
-    // LÓGICA DE VALIDAÇÃO ROBUSTA
     validate(options) {
         // 1. Tenta obter o token da configuração (config.js)
         let finalToken = options.app?.token; 
         
-        // 2. Se o token da config for nulo ou vazio, tenta obter do ambiente (injetado pelo ShardingManager)
+        // 2. Se o token da config for nulo ou vazio, tenta obter do ambiente
         const shardingToken = process.env.DISCORD_TOKEN;
         if (!finalToken && shardingToken) {
+            console.log('[CLIENT] Token não encontrado em options.app.token, usando DISCORD_TOKEN do ambiente.'.yellow);
             finalToken = shardingToken;
         }
 
         if (!finalToken) {
-            console.error('ERRO CRÍTICO: Token não encontrado na configuração ou no ambiente de Sharding.');
-            // Se o token for nulo, a chamada ao login falhará, e queremos que o processo morra aqui.
+            console.error('ERRO CRÍTICO: Token não encontrado na configuração ou no ambiente de Sharding.'.red);
             process.exit(1); 
         }
+        
         this.token = finalToken;
+        console.log(`[CLIENT] Token validado: ...${finalToken.slice(-5)}`.green);
     }
 
     loadExpressServer(options) {
@@ -82,28 +84,37 @@ module.exports = class NisrukshaClient extends Client {
          console.log('[CLIENT] Lógica de loadExpressServer concluída.');
     }
 
-    // CHAMADA DE LOGIN SIMPLIFICADA
     async login() {
         console.log('[CLIENT] Tentando login no Discord...');
+        
+        // ADICIONAR: Validar novamente antes do login
+        if (!this.token) {
+            console.error('[CLIENT] ERRO: Token não definido em this.token!'.red);
+            process.exit(1);
+        }
+        
         try {
-            // Usa o token armazenado em this.token pela função validate()
-            // Se this.token for undefined aqui, o validate() deveria ter causado process.exit(1)
+            console.log(`[CLIENT] Usando token: ...${this.token.slice(-5)}`.cyan);
             await super.login(this.token); 
             API.client = this;
-            console.log('[CLIENT] Login bem-sucedido.');
+            console.log('[CLIENT] Login bem-sucedido.'.green);
         } catch (err) {
-             console.error('[ERRO] Falha ao fazer login no Discord:', err);
+             console.error('[ERRO] Falha ao fazer login no Discord:'.red, err);
              process.exit(1);
         }
 
         process.on("uncaughtException", (err, origin) => {
-            console.error(`[ERRO GLOBAL] Uncaught Exception:`, err); console.error(`[ERRO GLOBAL] Origin:`, origin);
+            console.error(`[ERRO GLOBAL] Uncaught Exception:`, err); 
+            console.error(`[ERRO GLOBAL] Origin:`, origin);
             if (API.client?.emit) { try { API.client.emit('error', err); } catch (e){ console.error("Emit error:", e)} }
         });
+        
         process.on("unhandledRejection", (reason, promise) => {
-            console.error('[ERRO GLOBAL] Unhandled Rejection:', reason); console.error('[ERRO GLOBAL] Promise:', promise);
+            console.error('[ERRO GLOBAL] Unhandled Rejection:', reason); 
+            console.error('[ERRO GLOBAL] Promise:', promise);
             if (API.client?.emit) { try { API.client.emit('error', reason instanceof Error ? reason : new Error(String(reason))); } catch (e){ console.error("Emit error:", e)} }
         });
+        
         console.log('[CLIENT] Handlers de erro global configurados.');
     }
 }

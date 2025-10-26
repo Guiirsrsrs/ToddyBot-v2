@@ -33,7 +33,7 @@ module.exports = {
           return;
         }
 
-        DatabaseManager.set(interaction.user.id, 'players', 'bglink', bglink)
+        API.client.dbset(interaction.user.id, 'players', 'bglink', bglink)
 
         const embed = new Discord.MessageEmbed()
         .setColor('#8adb5e')

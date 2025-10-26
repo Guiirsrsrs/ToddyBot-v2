@@ -33,7 +33,7 @@ module.exports = {
         let r1 = quantia;
         let pricea = await API.maqExtension.storage.getPrice(interaction.user.id, r1)
         let price = Math.round(await API.maqExtension.storage.getPrice(interaction.user.id, r1)*1.40)
-        let obj = await DatabaseManager.get(interaction.user.id, 'storage');
+        let obj = await API.client.dbget(interaction.user.id, 'storage');
         let lvl = obj.storage;
         
 		const embed = new Discord.MessageEmbed()
@@ -75,8 +75,8 @@ module.exports = {
                 } else {
                     embed.setColor('#5bff45');
                     pago += price;
-                    await DatabaseManager.set(interaction.user.id, 'storage', 'storage', lvl+r1)
-                    let obj55 = await DatabaseManager.get(interaction.user.id, 'storage');
+                    await API.client.dbset(interaction.user.id, 'storage', 'storage', lvl+r1)
+                    let obj55 = await API.client.dbget(interaction.user.id, 'storage');
                     let lvl55 = obj55.storage;
                     embed.addField('<:upgrade:738434840457642054> Aprimoramento realizado com sucesso!', `Peso máximo: **${API.format(max)}g (+${r1*API.maqExtension.storage.sizeperlevel})**\nNível do armazém: **${API.format(lvl55)} (+${r1})**\nPreço pago: **${API.format(pago)} ${API.money} ${API.moneyemoji}**`)
                     .setFooter('')

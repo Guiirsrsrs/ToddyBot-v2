@@ -1,4 +1,4 @@
-const API = require("../../api.js");
+const API = require("../../api/index");
 let bg, locked, locked2, rachadura1, rachadura2, rachadura3, rachadura4, rachadura5
 
 loadbg()

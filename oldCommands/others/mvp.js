@@ -41,7 +41,7 @@ OBS: As vantagens são ativas enquanto você possui um MVP!
 
 `).setTimestamp()
 
-            let pobj = await DatabaseManager.get(interaction.user.id, 'players')
+            let pobj = await API.client.dbget(interaction.user.id, 'players')
             if (API.debug)console.log(Date.now()-pobj.mvp)
             if (pobj.mvp != null) {
                 embed.addField(`<:info:736274028515295262> Informações do seu MVP`, `Tempo restante: **${API.ms2((Date.now()-pobj.mvp)*-1)}**`)

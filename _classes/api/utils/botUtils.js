@@ -6,6 +6,7 @@ const DatabaseManager = require('../../manager/DatabaseManager'); // Caminho Cor
 const dbManager = new DatabaseManager(); // Instância local
 const { app } = require('../../config'); // Caminho Correto
 const path = require('path'); // Necessário para path.resolve em drawText
+const fs = require('fs'); // ← ADICIONAR ESTA LINHA
 const opentype = require("opentype.js"); // Necessário para drawText
 require('colors'); // Para logs
 
@@ -32,6 +33,10 @@ botUtils.uptime = function() {
  */
 botUtils.getBotInfoProperties = async function(client, apiState = {}) { // Adiciona valor padrão para apiState
     // Função interna para formatar bytes
+
+    const API = require('../index');
+    const DatabaseManager = new API.DatabaseManager();
+    
     function formatBytes(bytes) {
         if (!bytes || bytes === 0) return '0 Bytes'; // Trata null ou 0
         const k = 1024;

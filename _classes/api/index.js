@@ -1,16 +1,15 @@
 // _classes/api/index.js
 
 // --- Core Imports ---
-const { prefix, owner, token, ip, app } = require("../config"); // Caminho: ../config
-const version = require('../../package.json').version; // Caminho: ../../package.json
-const DatabaseManager = require('../manager/DatabaseManager'); // Caminho: ../manager/DatabaseManager
-const dbManagerInstance = new DatabaseManager(); // Instância do Manager
-const discordJS = require('discord.js'); // Importa o discord.js inteiro
+const { prefix, owner, token, ip, app } = require("../config");
+const version = require('../../package.json').version;
+const DatabaseManager = require('../manager/DatabaseManager'); // IMPORTA A CLASSE, NÃO CRIA INSTÂNCIA
+const discordJS = require('discord.js');
 
 // --- Discord.js Builders & Components ---
 const {
     EmbedBuilder, ButtonBuilder, ActionRowBuilder, SelectMenuBuilder, ButtonStyle, Collection
-} = discordJS; // Extrai builders do discordJS
+} = discordJS;
 
 // --- Utility Modules Imports ---
 const botUtils = require('./utils/botUtils');
@@ -35,11 +34,9 @@ const modules = {
     shopExtension: require('./modules/shopExtension'),
     siteExtension: require('./modules/siteExtension'),
     townExtension: require('./modules/townExtension')
-    // Adicione outros módulos aqui se necessário
 };
 
 // --- API Object Construction ---
-// Usar 'let' permite modificar/adicionar propriedades depois (como client)
 let API = {
     // --- Core Info & Config ---
     prefix, owner, token, ip, app, version, id: app.id,
@@ -59,21 +56,19 @@ let API = {
     mastery: { name: 'pontos de maestria', emoji: '🔰' },
 
     // --- Core Components ---
-    DatabaseManager: dbManagerInstance, // Instância do DB Manager (MongoDB)
-    // db: require('../db'), // Conexão MongoDB gerenciada via connectDB() - Não exportar diretamente?
-    client: null, // Será definido pelo NisrukshaClient
-    Discord: discordJS, // Exporta o discord.js inteiro para compatibilidade/acesso a tipos
+    DatabaseManager: DatabaseManager, // EXPORTA A CLASSE, NÃO A INSTÂNCIA
+    client: null,
+    Discord: discordJS,
 
     // --- Discord.js Builders & Components ---
     EmbedBuilder, ButtonBuilder, ActionRowBuilder, SelectMenuBuilder, ButtonStyle, Collection,
 
-    // --- Utility Functions (Grouped & Direct Access) ---
+    // --- Utility Functions ---
     utils: {
         bot: botUtils,
         db: dbUtils,
         discord: discordUtils,
         format: formatUtils,
-        // Atalhos comuns (mantidos para conveniência)
         ms: formatUtils.ms,
         ms2: formatUtils.ms2,
         format: formatUtils.format,
@@ -86,43 +81,35 @@ let API = {
         createButton: discordUtils.createButton,
         createMenu: discordUtils.createMenu,
         rowComponents: discordUtils.rowComponents,
-        // Adicionar editOrReply aqui também?
-        editOrReply: discordUtils.editOrReply, // Certifique-se que foi exportado em discordUtils.js
+        editOrReply: discordUtils.editOrReply,
     },
 
     // --- System Modules ---
-    ...modules, // Espalha todos os módulos importados (API.eco, API.company, etc.)
+    ...modules,
 
     // --- Funções Específicas com Contexto (Wrappers) ---
-    // Wrapper para getBotInfoProperties
-    getBotInfoProperties: async () => { // Tornar async se botUtils.getBotInfoProperties for async
-        // Coleta o estado atual necessário
+    getBotInfoProperties: async () => {
         const currentState = {
             lastsave: API.lastsave,
             cmdsexec: API.cmdsexec,
             playerscmds: API.playerscmds,
-            cacheLists: API.cacheLists, // Passa o módulo inteiro
+            cacheLists: API.cacheLists,
             version: API.version
         };
-        // Chama a função passando o client e o estado
-        // Garante que API.client esteja definido antes de chamar
+        
         if (!API.client) {
             console.warn("[API.getBotInfoProperties] Chamado antes do API.client ser definido.");
-            // Retornar um embed padrão ou lançar erro?
             return new EmbedBuilder().setTitle("Bot Status").setDescription("Aguardando inicialização...");
         }
-        return await botUtils.getBotInfoProperties(API.client, currentState); // Usa await
+        return await botUtils.getBotInfoProperties(API.client, currentState);
     },
-    // Wrapper para setCompanieInfo
+    
     setCompanieInfo: (user_id, company_id, field, value) => {
-        // Chama a função passando o client
-        // Garante que API.client esteja definido
         if (!API.client) {
-             console.warn("[API.setCompanieInfo] Chamado antes do API.client ser definido. Erro pode não ser emitido.");
+             console.warn("[API.setCompanieInfo] Chamado antes do API.client ser definido.");
         }
         return dbUtils.setCompanieInfo(user_id, company_id, field, value, API.client);
     },
-
 };
 
 module.exports = API;

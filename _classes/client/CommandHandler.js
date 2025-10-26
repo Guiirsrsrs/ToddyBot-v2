@@ -112,7 +112,7 @@ class CommandHandler {
             }
 
             // --- Registro Específico da Guilda (STAFF) ---
-            const guildId = '693150851396796446'; // Mantenha ou torne configurável
+            const guildId = '1153704546351190158'; // Mantenha ou torne configurável
              if (serverCommandsJson.length > 0) {
                  try {
                      console.log(`[CommandHandler] Iniciando registro de ${serverCommandsJson.length} comandos no servidor ${guildId}.`);

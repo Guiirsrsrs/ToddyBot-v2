@@ -29,7 +29,7 @@ module.exports = {
             return;
         }
 
-        const obj = await DatabaseManager.get(interaction.user.id, 'storage');
+        const obj = await API.client.dbget(interaction.user.id, 'storage');
         
         if (obj[`crate:${id}`] == null || obj[`crate:${id}`] < 1 || obj[`crate:${id}`] == undefined) {
             const embedtemp = await API.sendError(interaction, `Você não possui uma caixa com este id!\nUtilize \`/mochila\` para visualizar suas caixas`, `abrircaixa 1`)
@@ -85,8 +85,8 @@ module.exports = {
                 }
 
                 try {
-                    const obj = await DatabaseManager.get(interaction.user.id, 'storage');
-                    DatabaseManager.set(interaction.user.id, 'storage', `"crate:${id}"`, obj[`crate:${id}`]-1);
+                    const obj = await API.client.dbget(interaction.user.id, 'storage');
+                    API.client.dbset(interaction.user.id, 'storage', `"crate:${id}"`, obj[`crate:${id}`]-1);
                     API.eco.addToHistory(interaction.user.id, `${API.crateExtension.obj[id.toString()].name} | ${reward.size > 0 ? '+ ' + API.format(reward.size) + ' ':''}${reward.icon}`)
                     switch (reward.type) {
                         case 0:
@@ -99,8 +99,8 @@ module.exports = {
                             API.eco.points.add(interaction.user.id, reward.size)
                             break;
                         case 3:
-                            playerobj = await DatabaseManager.get(interaction.user.id, 'storage');
-                            DatabaseManager.set(interaction.user.id, 'storage', `"piece:${reward.pid}"`, playerobj[`piece:${reward.pid}`] + reward.size)
+                            playerobj = await API.client.dbget(interaction.user.id, 'storage');
+                            API.client.dbset(interaction.user.id, 'storage', `"piece:${reward.pid}"`, playerobj[`piece:${reward.pid}`] + reward.size)
                             break;
                         case 4:
                             API.eco.tp.add(interaction.user.id, reward.size)

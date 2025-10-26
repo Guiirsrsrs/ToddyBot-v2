@@ -82,7 +82,7 @@ module.exports = {
         API.townExtension.population[API.townExtension.getTownNameByNum(prox)]++;
         API.townExtension.population[API.townExtension.getTownNameByNum(atual)]--;
 
-        DatabaseManager.set(interaction.user.id, 'towns', 'loc', prox);
+        API.client.dbset(interaction.user.id, 'towns', 'loc', prox);
         let assaltado = false;
         let total = 0;
         let money = await API.eco.money.get(interaction.user.id);

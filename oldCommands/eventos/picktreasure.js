@@ -26,7 +26,7 @@ module.exports = {
             return;
         }
         
-        let obj6 = await DatabaseManager.get(interaction.user.id, "machines");
+        let obj6 = await API.client.dbget(interaction.user.id, "machines");
 
         let prof = 0
         const init = Date.now()
@@ -64,7 +64,7 @@ module.exports = {
                 xp = await API.playerUtils.execExp(interaction, xp);
                 
                 embed.fields = [];
-                const obj6 = await DatabaseManager.get(interaction.user.id, "machines");
+                const obj6 = await API.client.dbget(interaction.user.id, "machines");
 
                 let stop = false
 

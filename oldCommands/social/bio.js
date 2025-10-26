@@ -23,7 +23,7 @@ module.exports = {
             return;
         }
 
-        DatabaseManager.set(interaction.user.id, "players", "bio", bio)
+        API.client.dbset(interaction.user.id, "players", "bio", bio)
 		const embed = new Discord.MessageEmbed()
 	    .setColor('#8adb5e')
         .setDescription(`Sua biografia foi definida para:
