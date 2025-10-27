@@ -1,7 +1,8 @@
 // _classes/api/modules/crateExtension.js
 
-const API = require('../index'); // API centralizada
-const DatabaseManager = API.DatabaseManager; // Instância
+const API = require('../index'); // API centralizada (contém API.db)
+// REMOVIDO: Instância local do DatabaseManager
+// const DatabaseManager = API.DatabaseManager;
 const fs = require('fs');
 const path = require('path');
 require('colors');
@@ -30,7 +31,7 @@ crateExtension.load = async function() { // Tornada async para consistência, em
     // Corrigir caminho relativo
     const jsonPath = path.join(__dirname, '..', '..', '..', '_json/crates.json'); // ../../../_json/
     try {
-        console.log(`[CrateExt] Carregando definições de caixas de: ${jsonPath}`);
+        console.log(`[CrateExt] Carregando definições de caixas de: ${jsonPath}`.yellow); // Log colorido
         const jsonString = fs.readFileSync(jsonPath, 'utf8');
         crateExtension.obj = JSON.parse(jsonString);
         console.log(`[CrateExt] ${Object.keys(crateExtension.obj).length} tipos de caixa carregados.`);
@@ -74,7 +75,8 @@ crateExtension.getCrates = async function(user_id) {
     try {
         const filter = { user_id: user_id };
         // Busca o documento storage inteiro, pois as chaves são dinâmicas (crate:*)
-        const storageDoc = await API.client.db.findOne('storage', filter);
+        // ALTERADO: Usando API.db
+        const storageDoc = await API.db.findOne('storage', filter);
 
         if (storageDoc) {
             // Itera sobre as definições de caixas carregadas
@@ -154,9 +156,9 @@ crateExtension.getReward = function(crateId, size = 1) { // Adiciona valor padr�
                 }
             }
              if (!reward) {
-                  console.warn(`[CrateExt.getReward] Não foi possível selecionar recompensa baseada em chance para caixa ${idStr}. Verifique as chances.`);
-                  // Selecionar o último item como fallback? Ou nenhum?
-                  // reward = { ...sortedRewards[sortedRewards.length - 1], size: 1 };
+                   console.warn(`[CrateExt.getReward] Não foi possível selecionar recompensa baseada em chance para caixa ${idStr}. Verifique as chances.`);
+                   // Selecionar o último item como fallback? Ou nenhum?
+                   // reward = { ...sortedRewards[sortedRewards.length - 1], size: 1 };
              }
         } else {
              console.warn(`[CrateExt.getReward] Formato de 'rewards' inválido para caixa ID: ${idStr}`);
@@ -193,7 +195,8 @@ crateExtension.give = async function(user_id, crateId, quantity) {
     const update = { $inc: { [crateKey]: amount } }; // Usa $inc para adicionar
 
     try {
-        await API.client.db.updateOne('storage', filter, update, { upsert: true }); // Upsert cria o doc storage se não existir
+        // ALTERADO: Usando API.db
+        await API.db.updateOne('storage', filter, update, { upsert: true }); // Upsert cria o doc storage se não existir
         // console.log(`[CrateExt.give] ${amount}x caixa(s) ${idStr} adicionada(s) para ${user_id}.`); // Log opcional
         return true;
     } catch (err) {

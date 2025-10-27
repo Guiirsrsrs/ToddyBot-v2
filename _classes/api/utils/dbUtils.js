@@ -1,8 +1,8 @@
 // _classes/api/utils/dbUtils.js
 
 const API = require('../index');
-// CRIAR INSTÂNCIA LOCAL
-const DatabaseManager = new API.DatabaseManager();
+// REMOVIDO: Instância local foi removida. O 'API.db' agora é injetado pelo ToddyClient.
+// const DatabaseManager = new API.DatabaseManager(); 
 require('colors');
 
 const dbUtils = {};
@@ -23,7 +23,8 @@ dbUtils.setCompanieInfo = async function (user_id, company_id, field, value, cli
              }
          };
 
-        const result = await DatabaseManager.updateOne('companies', filter, update, { upsert: true });
+        // ALTERADO: Usando a instância centralizada 'API.db' injetada pelo Client
+        const result = await API.db.updateOne('companies', filter, update, { upsert: true });
 
         if (!result) {
             console.error(`[ERRO][dbUtils.setCompanieInfo] Operação retornou null.`.red);

@@ -1,4 +1,4 @@
-// _classes/NisrukshaClient.js
+// _classes/ToddyClient.js
 
 const { Client, GatewayIntentBits, IntentsBitField, Collection } = require('discord.js');
 const API = require("./api"); // Mantém o require aqui para acesso inicial
@@ -27,7 +27,7 @@ process.on("unhandledRejection", (reason, promise) => {
 console.log('[CLIENT] Handlers de erro global configurados no topo.');
 // <<< FIM DOS HANDLERS GLOBAIS >>>
 
-module.exports = class NisrukshaClient extends Client {
+module.exports = class ToddyClient extends Client {
 
     constructor(options = {}) {
         // --- CÁLCULO NUMÉRICO DAS INTENTS ---

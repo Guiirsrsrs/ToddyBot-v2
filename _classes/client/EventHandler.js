@@ -1,52 +1,59 @@
 // _classes/client/EventHandler.js
 
-const fs = require('fs');
+const glob = require('glob');
 const path = require('path');
+require('colors'); // Para logs
 
 class EventHandler {
     constructor(client, api) {
         this.client = client;
-        this.API = api;
-        this.eventsPath = path.join(__dirname, '..', '..', 'events'); // Ajuste o caminho se necessário
+        this.API = api; // API centralizada
+        this.eventsPath = path.join(__dirname, '..', '..', 'events', '*.js'); // Caminho para ../../events/*.js
     }
 
     loadAll() {
-        console.log('[EventHandler] Carregando eventos...');
-        fs.readdir(this.eventsPath, (err, files) => {
-            if (err) {
-                console.error('[ERRO][EventHandler] Falha ao ler a pasta de eventos:', err);
-                return;
-            }
+        console.log('[EventHandler] Carregando eventos...'.yellow);
+        const eventFiles = glob.sync(this.eventsPath);
+        console.log(`[EventHandler] Encontrados ${eventFiles.length} arquivos de eventos.`);
 
-            const eventFiles = files.filter(file => file.endsWith('.js'));
-            console.log(`[EventHandler] Encontrados ${eventFiles.length} arquivos de eventos.`);
+        for (const file of eventFiles) {
+            try {
+                console.log(`[EventHandler] Tentando carregar evento: ${path.basename(file)}`);
+                // Limpa cache para permitir recarregamento se necessário
+                delete require.cache[require.resolve(file)];
+                const event = require(file);
 
-            eventFiles.forEach(file => {
-                const filePath = path.join(this.eventsPath, file);
-                console.log(`[EventHandler] Tentando carregar evento: ${file}`);
-                try {
-                    delete require.cache[require.resolve(filePath)]; // Limpar cache
-                    const event = require(filePath);
-
-                    if (!event.name || typeof event.execute !== 'function') {
-                        console.warn(`[AVISO][EventHandler] Evento ${file} inválido (sem nome ou execute). Pulando.`);
-                        return;
-                    }
-
-                    // Usa 'this.API' que foi passado no construtor
-                    if (event.name !== 'ready') {
-                        this.client.on(event.name, (...args) => event.execute(this.API, ...args));
-                    } else {
-                        // Garante que o evento 'ready' só rode uma vez por inicialização
-                        this.client.once(event.name, (...args) => event.execute(this.API, ...args));
-                    }
-                    console.log(`[EventHandler] Evento ${event.name} (${file}) carregado.`);
-                } catch (err) {
-                    console.error(`[ERRO][EventHandler] Falha ao carregar o evento ${file}:`, err);
+                // Valida se o evento tem nome e função execute
+                if (!event.name || typeof event.execute !== 'function') {
+                    console.warn(`[AVISO][EventHandler] Evento ${file} inválido (sem nome ou execute). Pulando.`);
+                    continue;
                 }
-            });
-            console.log(`[EventHandler] Carregamento de eventos concluído.`);
-        });
+
+                // Determina se o evento deve ser 'once' ou 'on'
+                const eventMethod = event.once ? 'once' : 'on';
+
+                // Registra o listener no cliente
+                // Usa (...args) => event.execute(this.API, ...args) para passar a API
+                // e todos os argumentos originais do evento para a função execute.
+                this.client[eventMethod](event.name, (...args) => {
+                    try {
+                         // Passa a API e os argumentos do evento
+                         event.execute(this.API, ...args);
+                    } catch (executeError) {
+                         console.error(`[ERRO][EventHandler] Falha ao EXECUTAR evento ${event.name} de ${path.basename(file)}:`, executeError);
+                         // Emite um erro global se a execução falhar
+                         if(this.API.client?.emit) this.API.client.emit('error', executeError);
+                    }
+                });
+
+                console.log(`[EventHandler] Evento ${event.name} (${path.basename(file)}) carregado.`);
+
+            } catch (err) {
+                console.error(`[ERRO][EventHandler] Falha ao CARREGAR evento ${file}:`, err);
+                 if(this.API.client?.emit) this.API.client.emit('error', err);
+            }
+        }
+        console.log('[EventHandler] Carregamento de eventos concluído.'.green);
     }
 }
 

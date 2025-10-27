@@ -41,9 +41,6 @@ img.corner = function(ctx, r, imagew, imageh) {
 
 img.radius = function(ctx, imagew, imageh) {
     img.corner(ctx, (imagew + imageh) / 4, imagew, imageh);
-    // Nota: Aplicar circle após corner pode não ter o efeito desejado,
-    // dependendo da ordem e do que se pretende. Revise se necessário.
-    // img.circle(ctx, imagew, imageh);
 };
 
 img.runColor = function(ctx, width, height, color, type) {
@@ -162,14 +159,6 @@ img.resize = async function(imageInput, x, y) {
         const image = await img.Canvas.loadImage(imageInput); // Carrega a imagem (aceita Buffer, Data URL, Path)
         const imagew = image.width;
         const imageh = image.height;
-
-        // Calcula a escala mantendo a proporção (opcional, pode distorcer se x/y não for proporcional)
-        // Se quiser manter proporção:
-        // const ratio = Math.min(x / imagew, y / imageh);
-        // const newWidth = imagew * ratio;
-        // const newHeight = imageh * ratio;
-        // Usar newWidth e newHeight abaixo
-
         // Se quiser forçar o tamanho exato (pode distorcer):
         const newWidth = x;
         const newHeight = y;
@@ -255,10 +244,6 @@ img.drawText = function (ctx, text, fontSize, fontPath, fontColor, x, y, align =
         if (row === 1) drawY -= height / 2; // Middle (ajuste pode precisar refino dependendo da linha base da fonte)
         else if (row === 2) drawY -= height; // Bottom (ajuste pode precisar refino)
 
-        // Ajuste fino baseado no bounding box real (para alinhar precisamente)
-        // drawX -= bounds.x1; // Comentar se o alinhamento já for suficiente
-        // drawY -= bounds.y1; // Comentar/Ajustar conforme a linha base da fonte
-
         // Cria o caminho final nas coordenadas ajustadas
         const finalPath = font.getPath(text, drawX, drawY, safeFontSize);
         finalPath.fill = safeFontColor;
@@ -267,10 +252,6 @@ img.drawText = function (ctx, text, fontSize, fontPath, fontColor, x, y, align =
     } catch (error) {
         console.error(`[ERRO][IMG] Falha ao desenhar texto "${text}" com fonte ${fontPath}:`, error);
         if (API.client?.emit) API.client.emit('error', error);
-        // Fallback: Desenhar com fonte padrão do canvas se opentype falhar?
-        // ctx.fillStyle = safeFontColor || '#000000';
-        // ctx.font = `${safeFontSize || 10}px sans-serif`;
-        // ctx.fillText(text, drawX, drawY); // Ajustar coordenadas para fillText
     }
 };
 
@@ -334,26 +315,6 @@ img.generateProgressBar = async function(type, width, height, percent, lineWidth
         ctx.lineWidth = safeLineWidth;
         ctx.lineCap = capStyle;
 
-        // Desenhar fundo (opcional, para visualização)
-        /*
-        ctx.save();
-        ctx.strokeStyle = '#E0E0E0'; // Cinza claro
-        ctx.lineWidth = safeLineWidth;
-        ctx.lineCap = capStyle;
-        if (type === 0) {
-            ctx.beginPath();
-            ctx.moveTo(capStyle === 'round' ? safeLineWidth / 2 : 0, height / 2);
-            ctx.lineTo(capStyle === 'round' ? width - safeLineWidth / 2 : width, height / 2);
-            ctx.stroke();
-        } else if (type === 1) {
-            ctx.beginPath();
-            ctx.arc(0, 0, width/2, 0, Math.PI * 2, false); // width/2 assume diâmetro = width
-            ctx.stroke();
-        }
-        ctx.restore();
-        */
-
-
         // Desenhar progresso
         ctx.beginPath();
         if (type === 0) { // Horizontal
@@ -380,7 +341,6 @@ img.generateProgressBar = async function(type, width, height, percent, lineWidth
          return null;
     }
 };
-
 img.createImage = async function(width, height, color, type) {
     try {
         const canvas = img.Canvas.createCanvas(width, height);
@@ -393,8 +353,6 @@ img.createImage = async function(width, height, color, type) {
         return null;
     }
 };
-
-
 img.rotate = async function(imagedata, degrees) {
     try {
         const image = await img.Canvas.loadImage(imagedata);
@@ -426,9 +384,7 @@ img.rotate = async function(imagedata, degrees) {
         return null;
     }
 };
-
 // --- Carregamento dos Geradores de Imagem ---
-// Garante que isso rode apenas uma vez e após a inicialização do API.client
 let imagegensLoaded = false;
 function loadImagegens() {
     if (imagegensLoaded) return;
@@ -466,10 +422,6 @@ function loadImagegens() {
     });
 }
 
-// Chamar loadImagegens() em um ponto apropriado, talvez no evento 'ready' do bot
-// ou atrasado após a criação do objeto API, se necessário.
-// Por segurança, pode ser chamado aqui, mas pode dar erro se API.client for usado dentro dos imagegens
-// no momento do require.
 loadImagegens();
 
 

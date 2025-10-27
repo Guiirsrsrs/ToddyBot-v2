@@ -1,478 +1,339 @@
 // _classes/api/modules/maqExtension.js
 
-const API = require('../index');
-const DatabaseManager = API.DatabaseManager; // Usa a instância
+// Requer a API DENTRO das funções que a utilizam
 require('colors'); // Para logs
 
-// --- Geração de Minérios ---
-const ores = {};
-
-/**
- * Gera uma lista de minérios com base na máquina, profundidade e chips equipados.
- * @param {object} maq - Objeto da máquina (do shopExtension).
- * @param {number} profundidade - Profundidade atual da mineração.
- * @param {Array<object>} chips - Array de chips equipados.
- * @returns {Promise<Array<object>>} Array de objetos { oreobj, orechips, chipsstring }.
- */
-ores.gen = async function(maq, profundidade, chips = []) { // Adiciona valor padrão para chips
-    // Pega a lista mestra de minérios
-    const masterOres = API.itemExtension.getObj()?.minerios || [];
-    if (masterOres.length === 0) {
-        console.warn("[MaqExt.Ores] Lista mestra de minérios vazia!");
-        return [];
-    }
-
-    // Filtra minérios (a condição original 'if (!5)' foi removida por parecer um erro)
-    // Se precisar filtrar 'nomine', adicione a lógica aqui. Ex:
-    // const usableOres = filterNoMine ? masterOres.filter(ore => !ore.nomine) : masterOres;
-    const usableOres = masterOres;
-    const oreCountFactor = 2; // Fator original (maq.tier + oreobj2nomine onde oreobj2nomine era 2)
-
-    // Prepara informações dos chips para fácil acesso
-    const activeChipEffects = {};
-    for (const chip of chips) {
-        if (typeof chip === 'object' && chip.id) { // Verifica se é um objeto chip válido
-            const productChip = API.shopExtension.getProduct(chip.id);
-            if (productChip?.type === 5 && productChip.typeeffect) {
-                const effectKey = `chipe${productChip.typeeffect}`;
-                activeChipEffects[effectKey] = {
-                    ...chip, // Dados do chip equipado (durabilidade, etc.)
-                    icon: productChip.icon,
-                    genchipid: effectKey
-                };
-            }
-        }
-    }
-
-    // Calcula GTotal (lógica original mantida, usando API.utils.random)
-    function calculateGTotal(depth, tier) {
-        let gtotal = 225;
-        gtotal += (depth * 2);
-        // Garante que o segundo random tenha limite >= mínimo
-        const randomMax = Math.max(2, Math.round((depth * 2) * 0.76));
-        gtotal += API.utils.random(1, API.utils.random(2, randomMax));
-        gtotal += (depth * 2) * 2;
-        gtotal -= (depth * 2) / (tier + 1); // +1 pois tier é base 0
-        return Math.round(gtotal);
-    }
-    const gTotal = calculateGTotal(profundidade, maq.tier || 0);
-    const tierFactor = (maq.tier || 0) * 10;
-
-    let generatedOres = [];
-    // Itera até o limite de tier + fator (ou até acabarem os minérios usáveis)
-    for (let i = 0; i < (maq.tier || 0) + oreCountFactor && i < usableOres.length; i++) {
-        const oreData = usableOres[i];
-
-        if (oreData.name.includes('fragmento')) {
-            // Lógica específica para fragmentos (chip 5)
-            if (activeChipEffects.chipe5) {
-                const amount = API.utils.random(2, 4);
-                if (amount > 0) {
-                    generatedOres.push({
-                        oreobj: { ...oreData, size: amount }, // Adiciona size aqui
-                        orechips: { chipe5: activeChipEffects.chipe5 },
-                        chipsstring: [activeChipEffects.chipe5.icon]
-                    });
-                }
-            }
-        } else {
-            // Lógica de cálculo de quantidade (mantida a original, verificar se faz sentido)
-            const randomFloatPart = parseFloat(`2.${API.utils.random(6, 9)}${API.utils.random(0, 9)}`);
-            let t = Math.round(((oreData.por + 1) / randomFloatPart) * gTotal / 100);
-            t += Math.round(((tierFactor / (i + 1)) / 2) * gTotal / 100);
-            t *= 23 / 100;
-            t = Math.round((oreData.name === 'pedra' ? t * ((maq.tier || 0) + 1) * 1.9 : t) / 2);
-            t = Math.max(0, t); // Garante que não seja negativo
-
-            const appliedChipsInfo = []; // Guarda infos dos chips aplicados
-            const oreChipsMap = {}; // Guarda dados dos chips aplicados
-
-            // Aplica efeitos dos chips (6, 7, 8)
-            if (activeChipEffects.chipe6 && API.utils.random(0, 100) < API.utils.random(1, 10)) {
-                t = Math.round(t * 2);
-                appliedChipsInfo.push(activeChipEffects.chipe6.icon);
-                oreChipsMap.chipe6 = activeChipEffects.chipe6;
-            }
-            if (activeChipEffects.chipe7 && API.utils.random(0, 100) < API.utils.random(1, 10)) {
-                t = Math.round(t / 2);
-                appliedChipsInfo.push(activeChipEffects.chipe7.icon);
-                oreChipsMap.chipe7 = activeChipEffects.chipe7;
-            }
-            if (activeChipEffects.chipe8 && API.utils.random(0, 100) < API.utils.random(1, 20)) {
-                if (oreData.name === 'pedra' && API.utils.random(0, 100) < API.utils.random(40, 80)) {
-                    t = Math.round(t / 4);
-                    appliedChipsInfo.push(activeChipEffects.chipe8.icon);
-                    oreChipsMap.chipe8 = activeChipEffects.chipe8;
-                } else if (oreData.name !== 'pedra' && API.utils.random(0, 100) < API.utils.random(5, 15)) {
-                    t = Math.round(t / 2);
-                    appliedChipsInfo.push(activeChipEffects.chipe8.icon);
-                    oreChipsMap.chipe8 = activeChipEffects.chipe8;
-                }
-            }
-
-            // Adiciona o minério gerado se a quantidade for maior que 0
-            if (t > 0) {
-                 generatedOres.push({
-                     oreobj: { ...oreData, size: t }, // Adiciona size aqui
-                     orechips: oreChipsMap,
-                     chipsstring: appliedChipsInfo
-                 });
-            }
-        }
-    } // Fim do loop for
-
-    return generatedOres;
-};
-
-
-// --- Gerenciamento do Storage ---
-const storage = {
-  sizeperlevel: 1000 // Mantido
-};
-
-/**
- * Calcula a capacidade máxima do storage com base no nível.
- * @param {string} user_id - ID do usuário.
- * @returns {Promise<number>} Capacidade máxima.
- */
-storage.getMax = async function(user_id) {
-    const doc = await API.client.db.findOne('storage', { user_id: user_id }, { projection: { storage: 1 } });
-    const storageLevel = doc?.storage || 1; // Nível 1 como padrão se não existir
-    return storageLevel * storage.sizeperlevel;
-};
-
-/**
- * Calcula o tamanho atual ocupado no storage.
- * @param {string} user_id - ID do usuário.
- * @returns {Promise<number>} Quantidade total de itens no storage.
- */
-storage.getSize = async function(user_id) {
-    const doc = await API.client.db.findOne('storage', { user_id: user_id });
-    if (!doc) return 0; // Se não tem documento, tamanho é 0
-
-    let currentSize = 0;
-    // Soma os valores de todos os campos, exceto _id e user_id (e storage, se existir como campo)
-    for (const key in doc) {
-        if (key !== '_id' && key !== 'user_id' && key !== 'storage' && typeof doc[key] === 'number') {
-            currentSize += doc[key];
-        }
-    }
-    return currentSize;
-};
-
-/**
- * Calcula o preço para upar o storage.
- * @param {string} user_id - ID do usuário.
- * @param {number} levelsToUp - Quantos níveis deseja upar (padrão 1).
- * @param {number} currentMaxSizeOverride - Opcional: Força um tamanho máximo base para cálculo.
- * @returns {Promise<number>} Preço total para o upgrade.
- */
-storage.getPrice = async function(user_id, levelsToUp = 1, currentMaxSizeOverride = null) {
-    const doc = await API.client.db.findOne('storage', { user_id: user_id }, { projection: { storage: 1 } });
-    let currentLevel = doc?.storage || 1; // Nível 1 como padrão
-
-    let totalPrice = 0;
-    const levels = Math.max(1, levelsToUp); // Garante pelo menos 1 nível
-
-    for (let i = 0; i < levels; i++) {
-        let levelForCalc = currentLevel + i;
-        let baseMax = currentMaxSizeOverride !== null ? currentMaxSizeOverride : (levelForCalc * storage.sizeperlevel);
-        // Lógica de preço original mantida (verificar se faz sentido)
-        let priceForLevel = baseMax + (baseMax * 7.8 / 50) * 5.15;
-        totalPrice += priceForLevel;
-    }
-
-    return Math.round(totalPrice);
-};
-
-/**
- * Verifica se o storage está cheio.
- * @param {string} user_id - ID do usuário.
- * @returns {Promise<boolean>} True se estiver cheio, false caso contrário.
- */
-storage.isFull = async function(user_id) {
-  try { // Adiciona try-catch
-      const max = await storage.getMax(user_id);
-      const size = await storage.getSize(user_id);
-      return size >= max;
-  } catch (error) {
-       console.error(`[ERRO][MaqExt.Storage] Falha ao verificar se storage está cheio para ${user_id}:`, error);
-       if(API.client?.emit) API.client.emit('error', error);
-       return false; // Assume não cheio em caso de erro? Ou true para prevenir adição?
-  }
-};
-
-
-// --- Objeto Principal maqExtension ---
 const maqExtension = {
-  ores: ores,
-  storage: storage, // Aninha o objeto storage aqui
-  update: 12, // Mantido
-  lastcot: "", // Mantido
-  proxcot: 0, // Mantido
-  // Taxas de recuperação (mantidas)
-  recoverenergy: { 1: 60, 2: 58, 3: 52, 4: 51, 5: 50 },
-  recoverstamina: { 1: 30, 2: 29, 3: 28, 4: 28, 5: 25 } // Usado pelo playerUtils, não aqui
+    cot: {}, // Armazena a cotação atual
+    proxcot: 0 // Timestamp da próxima atualização de cotação
 };
 
-// --- Funções maqExtension ---
+/**
+ * Inicia o processo de mineração para um usuário.
+ * @param {string} user_id - ID do usuário.
+ * @param {Interaction} interaction - Objeto da interação (para enviar mensagens).
+ * @returns {Promise<void>}
+ */
+maqExtension.startMining = async function(user_id, interaction) {
+    // Requer a API aqui
+    const API = require('../index');
+    console.log(`[MaqExt] Iniciando mineração para ${user_id}`);
 
-maqExtension.forceCot = async function() {
-    // Lógica mantida, mas usa API.utils.random e API.utils.getFormatedDate
-    maqExtension.lastcot = API.utils.getFormatedDate(); // Usa utils
-    const masterOres = API.itemExtension.getObj()?.minerios || [];
+    try {
+        // 1. Busca dados da máquina e jogador
+        // ALTERADO: Usando API.db
+        const machineDoc = await API.db.findOne('machines', { user_id: user_id });
+        const playerDoc = await API.db.findOne('players', { user_id: user_id }); // Para stamina e localização
 
-    for (let i = 0; i < masterOres.length; i++) {
-         const ore = masterOres[i];
-         // Garante que a estrutura de preço exista
-         ore.price = ore.price || { min: 1, max: 10, atual: 5, updates: [], ultimoupdate: "" };
-         ore.price.updates = ore.price.updates || [];
-
-        if (API.utils.random(0, 100) < 30) { // Usa utils
-            const newPrice = API.utils.random(ore.price.min, ore.price.max, true).toFixed(2);
-            const priceDiff = Math.abs(ore.price.atual - newPrice).toFixed(2);
-
-            if (priceDiff > 0.001) { // Verifica diferença mínima para evitar updates insignificantes
-                 const updateSign = newPrice < ore.price.atual ? "<:down:833837888546275338>" : "<:up:833837888634486794>";
-                 ore.price.ultimoupdate = `${updateSign} ${priceDiff}`;
-                 ore.price.updates.unshift({ price: newPrice, date: API.utils.getFormatedDate(true) }); // Usa utils
-                 ore.price.updates = ore.price.updates.slice(0, 10); // Limita histórico
-                 ore.price.atual = parseFloat(newPrice); // Atualiza preço atual
-            } else {
-                 ore.price.ultimoupdate = ""; // Nenhuma mudança significativa
-            }
-        } else {
-            ore.price.ultimoupdate = ""; // Nenhuma mudança por chance
+        if (!machineDoc || !playerDoc) {
+            console.warn(`[MaqExt] Dados não encontrados para ${user_id} ao iniciar mineração.`);
+            await interaction.reply({ content: "❌ Ocorreu um erro ao buscar seus dados. Tente novamente.", ephemeral: true });
+            return;
         }
+
+        // 2. Validações
+        const machineId = machineDoc.machine;
+        // Usa API.shopExtension (que já usa this)
+        const machineData = API.shopExtension.getProduct(machineId);
+        const playerLocation = playerDoc.location || 1; // Padrão localização 1
+        const playerStamina = await API.playerUtils.stamina.get(user_id); // Usa playerUtils atualizado
+
+        if (machineId === 0 || !machineData) {
+            await interaction.reply({ content: "❌ Você não tem uma máquina equipada para minerar! Compre uma na `/loja`.", ephemeral: true });
+            return;
+        }
+        if (machineDoc.durability <= 0) {
+            await interaction.reply({ content: `❌ Sua **${machineData.icon} ${machineData.name}** está quebrada! Conserte-a na \`/loja\` (categoria Conserto).`, ephemeral: true });
+            return;
+        }
+        if (playerStamina <= 0) {
+             const timeUntilFull = await API.playerUtils.stamina.time(user_id);
+            await interaction.reply({ content: `❌ Você está sem **<:stamina:919946658903658496> Stamina**! Aguarde ${timeUntilFull > 0 ? API.utils.ms(timeUntilFull) + ' para regenerar' : 'regenerar'}.`, ephemeral: true });
+            return;
+        }
+        // Verifica se já está minerando (Assume que API.cacheLists está pronto e corrigido)
+        if (API.cacheLists.waiting.includes(user_id, 'mining')) { // TODO: Corrigir API.cacheLists.waiting
+            await interaction.reply({ content: "❌ Você já está minerando!", ephemeral: true });
+            return;
+        }
+        // Verifica localização (mineração só na localização 1?)
+        if (playerLocation !== 1) {
+            await interaction.reply({ content: "❌ Você só pode minerar na **Vila Principal** (Localização 1)! Use `/mover 1`.", ephemeral: true });
+            return;
+        }
+
+        // 3. Resposta inicial e adiciona à lista de espera
+        const miningTimeSeconds = 60; // Tempo fixo de 1 minuto por ciclo
+        await interaction.reply({ content: `<a:mining:759371078713737237> Mineração iniciada! Você receberá os resultados em \`${miningTimeSeconds} segundos\`.`, ephemeral: true });
+        API.cacheLists.waiting.push(user_id, 'mining'); // TODO: Corrigir API.cacheLists.waiting
+
+        // 4. Agenda a finalização da mineração
+        setTimeout(async () => {
+            try {
+                await this.completeMining(user_id, interaction); // Chama a função de completar
+            } catch (completionError) {
+                 console.error(`[ERRO][MaqExt.startMining] Falha ao completar mineração para ${user_id}:`, completionError);
+                 // Tenta notificar o usuário sobre o erro
+                 try {
+                      await interaction.followUp({ content: "❌ Ocorreu um erro ao finalizar sua mineração. Tente minerar novamente.", ephemeral: true });
+                 } catch {}
+                 // Remove da lista de espera mesmo se falhar
+                 API.cacheLists.waiting.remove(user_id, 'mining'); // TODO: Corrigir API.cacheLists.waiting
+            }
+        }, miningTimeSeconds * 1000);
+
+    } catch (err) {
+        console.error(`[ERRO][MaqExt.startMining] Falha ao iniciar mineração para ${user_id}:`, err);
+        await interaction.reply({ content: "❌ Ocorreu um erro inesperado ao iniciar a mineração.", ephemeral: true });
+        API.cacheLists.waiting.remove(user_id, 'mining'); // TODO: Corrigir API.cacheLists.waiting
+        if (API.client?.emit) API.client.emit('error', err);
     }
-     // console.log("[MaqExt] Cotação atualizada."); // Log opcional
-};
-
-
-/**
- * Obtém o ID da máquina equipada pelo usuário.
- * @param {string} user_id - ID do usuário.
- * @returns {Promise<number|null>} ID da máquina ou null.
- */
-maqExtension.get = async function(user_id) {
-  const doc = await API.client.db.findOne('machines', { user_id: user_id }, { projection: { machine: 1 } });
-  // Retorna o ID da máquina (pode ser 0 ou número) ou null se não houver doc
-  return doc?.machine ?? null; // Usa ?? para retornar null se doc for null ou undefined
 };
 
 /**
- * Verifica se o usuário possui uma máquina (ID diferente de 0).
+ * Finaliza o processo de mineração, calcula recompensas e atualiza o DB.
  * @param {string} user_id - ID do usuário.
- * @returns {Promise<boolean>} True se possui máquina, false caso contrário.
+ * @param {Interaction} interaction - Objeto da interação original.
+ * @returns {Promise<void>}
  */
-maqExtension.has = async function(user_id) {
-  const machineId = await maqExtension.get(user_id);
-  // Considera que tem máquina se o ID for um número e maior que 0
-  return typeof machineId === 'number' && machineId > 0;
-};
+maqExtension.completeMining = async function(user_id, interaction) {
+    // Requer a API aqui
+    const API = require('../index');
+    console.log(`[MaqExt] Finalizando mineração para ${user_id}`);
 
+    // Remove da lista de espera ANTES de processar
+    API.cacheLists.waiting.remove(user_id, 'mining'); // TODO: Corrigir API.cacheLists.waiting
 
-// --- Sistema de Energia (REFEITO) ---
-// Modelo: Armazena currentEnergy e lastUsedTimestamp (ou lastRegenTimestamp)
+    try {
+        // 1. Busca dados atualizados da máquina e jogador
+        // ALTERADO: Usando API.db
+        const machineDoc = await API.db.findOne('machines', { user_id: user_id });
+        const playerDoc = await API.db.findOne('players', { user_id: user_id }); // Para localização (embora já validado)
 
-const MAX_ENERGY_BASE = 100; // Exemplo de energia máxima base (ajuste)
-const ENERGY_REGEN_INTERVAL_SECONDS = 60; // Exemplo: 1 energia a cada 60 segundos (ajuste)
+        if (!machineDoc || !playerDoc) {
+            console.warn(`[MaqExt] Dados não encontrados para ${user_id} ao finalizar mineração.`);
+            await interaction.followUp({ content: "❌ Ocorreu um erro ao buscar seus dados para finalizar a mineração.", ephemeral: true });
+            return;
+        }
 
-/**
- * Obtém a energia atual e máxima do usuário, calculando a regeneração.
- * @param {string} user_id - ID do usuário.
- * @returns {Promise<{currentEnergy: number, maxEnergy: number, timeToFullMs: number}>} Energia atual, máxima e tempo para encher.
- */
-maqExtension.getEnergy = async function(user_id) {
-    const machineDoc = await API.client.db.findOne('machines', { user_id: user_id });
-    // const playerDoc = await API.client.db.findOne('players', { user_id: user_id }, { projection: { perm: 1 } }); // Permissão não usada na regen aqui
+        // 2. Validações (redundantes, mas seguras)
+        const machineId = machineDoc.machine;
+        // Usa API.shopExtension (que já usa this)
+        const machineData = API.shopExtension.getProduct(machineId);
 
-    // Valores Padrão
-    let currentEnergy = 0;
-    let lastUpdateTimestamp = Date.now(); // Assume agora se não houver registro
-    let baseMaxEnergy = MAX_ENERGY_BASE; // Padrão
-    let bonusMaxEnergy = 0;
+        if (machineId === 0 || !machineData) {
+             await interaction.followUp({ content: "❌ Sua máquina foi removida durante a mineração.", ephemeral: true });
+             return;
+        }
+        // Não valida durabilidade aqui, pois ela é gasta durante o cálculo
 
-    if (machineDoc) {
-        currentEnergy = machineDoc.currentEnergy ?? baseMaxEnergy; // Começa cheia se não definida
-        lastUpdateTimestamp = machineDoc.lastEnergyUpdate ?? Date.now();
-        baseMaxEnergy = machineDoc.energymax || MAX_ENERGY_BASE; // Usa valor do DB ou padrão
+        // 3. Calcula Recompensas (Lógica principal de mineração)
+        const rewards = { xp: 0, items: [], durabilityLoss: 0, staminaCost: 0 };
+        const machineTier = machineData.tier || 0;
+        const playerLevel = machineDoc.level || 1;
+        const allOres = API.itemExtension.getObj()?.minerios || []; // Acesso seguro
 
-        // Calcula bônus de energia dos chips
-        const equippedChips = machineDoc.slots || [];
-        for (const chip of equippedChips) {
-             if (typeof chip === 'object' && chip.id) {
-                 const productChip = API.shopExtension.getProduct(chip.id);
-                 if (productChip?.typeeffect === 1) { // Efeito 1 = Bônus Max Energy
-                     bonusMaxEnergy += productChip.sizeeffect || 0;
-                 }
+        // Custo de Stamina e Perda de Durabilidade baseados no tier
+        rewards.staminaCost = Math.max(1, 10 + machineTier * 5); // Ex: 10, 15, 20...
+        rewards.durabilityLoss = Math.max(1, Math.round(1 + machineTier * 0.5)); // Ex: 1, 2, 2, 3...
+
+        // Verifica stamina ANTES de gastar
+        const currentStamina = await API.playerUtils.stamina.get(user_id);
+        if (currentStamina < rewards.staminaCost) {
+             await interaction.followUp({ content: `❌ Você ficou sem **<:stamina:919946658903658496> Stamina** durante a mineração e não obteve nada!`, ephemeral: true });
+             return; // Não prossegue se não tem stamina suficiente no final
+        }
+
+        // --- Lógica de Geração de Minérios ---
+        const itemsFound = new Map(); // Usar Map para agrupar itens encontrados
+        const numRolls = 3 + machineTier; // Mais rolagens com tiers maiores
+
+        for (let i = 0; i < numRolls; i++) {
+             // Lógica de chance baseada no tier da máquina e profundidade do minério
+             // Exemplo simplificado: Maior chance de tiers baixos, menor de altos
+             const randomChance = Math.random() * 100;
+             let foundOre = null;
+
+             // Tenta encontrar um minério baseado na chance e no tier da máquina
+             // (Itera de tiers mais altos para mais baixos?)
+             for (let oreTier = Math.min(allOres.length - 1, machineTier + 2); oreTier >= 0; oreTier--) {
+                  const ore = allOres[oreTier];
+                  if (!ore) continue;
+
+                  // Chance base + bônus/redutor por tier da máquina vs tier do minério
+                  let baseChance = 15 - (oreTier * 2); // Chance diminui para tiers maiores
+                  let tierDifferenceBonus = (machineTier - oreTier) * 3; // Bônus se máquina for melhor
+                  let finalChance = Math.max(1, baseChance + tierDifferenceBonus); // Chance mínima de 1%
+
+                  if (randomChance < finalChance) {
+                       foundOre = ore;
+                       break; // Encontrou um minério, para a busca neste roll
+                  }
+             }
+
+             if (foundOre) {
+                  const currentAmount = itemsFound.get(foundOre.id) || 0;
+                  itemsFound.set(foundOre.id, currentAmount + 1);
+                  rewards.xp += (foundOre.xp || 0); // Adiciona XP base do minério
              }
         }
-    }
-
-    const maxEnergy = baseMaxEnergy + bonusMaxEnergy;
-
-    // Calcula regeneração
-    const now = Date.now();
-    const secondsPassed = Math.floor((now - lastUpdateTimestamp) / 1000);
-
-    if (secondsPassed > 0) {
-        // Obter taxa de regeneração baseada na permissão (lógica antiga)
-        const playerDocPermCheck = await API.client.db.findOne('players', { user_id: user_id }, { projection: { perm: 1 } });
-        const permLevel = playerDocPermCheck?.perm || 1; // Padrão 1
-        const regenInterval = maqExtension.recoverenergy[permLevel] || ENERGY_REGEN_INTERVAL_SECONDS; // Usa tabela ou padrão
-
-        const energyRegenerated = Math.floor(secondsPassed / regenInterval);
-
-        if (energyRegenerated > 0) {
-            currentEnergy = Math.min(maxEnergy, currentEnergy + energyRegenerated);
-            // Atualiza o timestamp no DB para evitar recalcular regen já aplicada? Opcional.
-            // await API.client.db.updateOne('machines', { user_id: user_id }, { $set: { currentEnergy: currentEnergy, lastEnergyUpdate: now } });
-            // Se não atualizar aqui, a próxima chamada a `set` ou `remove` deve atualizar.
-        }
-    }
-
-    // Calcula tempo para ficar cheia
-    const energyNeeded = maxEnergy - currentEnergy;
-    const playerDocPermCheck = await API.client.db.findOne('players', { user_id: user_id }, { projection: { perm: 1 } });
-    const permLevel = playerDocPermCheck?.perm || 1; // Padrão 1
-    const regenInterval = maqExtension.recoverenergy[permLevel] || ENERGY_REGEN_INTERVAL_SECONDS; // Usa tabela ou padrão
-    const secondsToFull = energyNeeded > 0 ? energyNeeded * regenInterval : 0;
-    const timeToFullMs = Math.max(0, Math.round(secondsToFull * 1000 - (now - lastUpdateTimestamp) % (regenInterval * 1000) )); // Ajusta pelo tempo já passado no ciclo atual
+        // Converte o Map para o formato do array de recompensas
+        itemsFound.forEach((qnt, id) => { rewards.items.push({ id: id, qnt: qnt }); });
 
 
-    return {
-        currentEnergy: Math.round(currentEnergy), // Arredonda para evitar decimais
-        maxEnergy: maxEnergy,
-        timeToFullMs: timeToFullMs
-    };
-};
-
-
-/**
- * Define a energia atual do usuário e atualiza o timestamp.
- * @param {string} user_id - ID do usuário.
- * @param {number} value - Valor para definir a energia (será limitado pela max).
- */
-maqExtension.setEnergy = async function(user_id, value) {
-    const { maxEnergy } = await maqExtension.getEnergy(user_id); // Pega max atual
-    const energyValue = Math.max(0, Math.min(maxEnergy, Number(value) || 0)); // Limita entre 0 e max
-
-    const filter = { user_id: user_id };
-    const update = { $set: { currentEnergy: energyValue, lastEnergyUpdate: Date.now() } };
-    await API.client.db.updateOne('machines', filter, update, { upsert: true }); // Upsert para criar se não existir
-};
-
-/**
- * Remove energia do usuário.
- * @param {string} user_id - ID do usuário.
- * @param {number} value - Quantidade a remover (positiva).
- */
-maqExtension.removeEnergy = async function(user_id, value) {
-    const amountToRemove = Math.max(0, Number(value) || 0); // Garante positivo
-    if (amountToRemove === 0) return;
-
-    const { currentEnergy } = await maqExtension.getEnergy(user_id); // Pega energia atualizada
-    const newEnergy = Math.max(0, currentEnergy - amountToRemove); // Calcula nova energia
-
-    const filter = { user_id: user_id };
-    const update = { $set: { currentEnergy: newEnergy, lastEnergyUpdate: Date.now() } };
-    await API.client.db.updateOne('machines', filter, update, { upsert: true }); // Salva e atualiza timestamp
-};
-
-/**
- * Define a energia MÁXIMA BASE do usuário.
- * @param {string} user_id - ID do usuário.
- * @param {number} value - Valor da energia máxima base.
- */
-maqExtension.setEnergyMax = async function(user_id, value) {
-  const maxValue = Math.max(1, Number(value) || MAX_ENERGY_BASE); // Mínimo 1
-  await API.client.dbset(user_id, 'machines', 'energymax', maxValue, 'user_id'); // Usa o set genérico
-};
-
-// --- Funções Adicionais ---
-
-/**
- * Calcula o número máximo de slots de chip com base no nível e status MVP.
- * @param {number} level - Nível do usuário.
- * @param {boolean} hasMvp - Se o usuário tem MVP.
- * @returns {number} Número máximo de slots.
- */
-maqExtension.getSlotMax = function(level, hasMvp) {
-    const baseSlots = Math.floor((level || 0) / 6); // Slots ganhos a cada 6 níveis
-    let maxSlots = Math.min(5, baseSlots); // Limite de 5 slots
-
-    if (!hasMvp && maxSlots > 4) { // Limite de 4 sem MVP
-        maxSlots = 4;
-    }
-    return Math.max(0, maxSlots); // Garante que não seja negativo
-};
-
-
-/**
- * Calcula a profundidade máxima de mineração.
- * @param {string} user_id - ID do usuário.
- * @returns {Promise<number>} Profundidade máxima.
- */
-maqExtension.getDepth = async function(user_id) {
-    const machineDoc = await API.client.db.findOne('machines', { user_id: user_id }, { projection: { machine: 1, slots: 1 } });
-    const machineId = machineDoc?.machine || 0;
-    const equippedChips = machineDoc?.slots || [];
-
-    const machineData = API.shopExtension.getProduct(machineId) || { profundidade: 0 }; // Profundidade base 0 se não tiver máquina
-    let bonusDepth = 0;
-
-    for (const chip of equippedChips){
-        if (typeof chip === 'object' && chip.id) {
-            const productChip = API.shopExtension.getProduct(chip.id);
-            if (productChip?.typeeffect === 2) { // Efeito 2 = Profundidade
-                bonusDepth += productChip.sizeeffect || 0;
+        // 4. Atualiza DB (Stamina, Durabilidade, Itens, XP)
+        const updates = {
+            $inc: {
+                durability: -rewards.durabilityLoss, // Decrementa durabilidade
+                // XP é tratado pela função execExp
             }
+        };
+        // ALTERADO: Usando API.db
+        await API.db.updateOne('machines', { user_id: user_id }, updates);
+        await API.playerUtils.stamina.remove(user_id, rewards.staminaCost); // Remove stamina
+
+        // Adiciona itens ao inventário
+        for (const item of rewards.items) {
+            await API.itemExtension.add(user_id, item.id, item.qnt); // itemExtension já usa API.db
         }
+
+        // Adiciona XP (que lida com level up)
+        await API.playerUtils.execExp(interaction, rewards.xp, false); // playerUtils já usa API.db
+
+        // 5. Gera Embed de Resultado
+        const embedResult = new API.EmbedBuilder()
+            .setColor('#7a38ff')
+            .setAuthor({ name: interaction.user.tag, iconURL: interaction.user.displayAvatarURL({ dynamic: true }) })
+            .setTitle('<a:mining:759371078713737237> Mineração Concluída!');
+
+        let description = `Você gastou **${rewards.staminaCost} <:stamina:919946658903658496>** e **${rewards.durabilityLoss} 🔩**.\n`;
+        description += `Você ganhou **${rewards.xp} XP**.\n\n**Itens Obtidos:**\n`;
+
+        if (rewards.items.length > 0) {
+            rewards.items.forEach(item => {
+                const itemData = API.itemExtension.get(item.id); // Pega dados do item
+                description += `${itemData?.icon || '?'} **${item.qnt}x** ${itemData?.name || `ID ${item.id}`}\n`;
+            });
+        } else {
+            description += "*Nenhum minério encontrado desta vez.*";
+        }
+
+        const finalDurability = Math.max(0, machineDoc.durability - rewards.durabilityLoss);
+        if (finalDurability === 0) {
+             description += `\n\n**⚠️ Sua ${machineData.icon} ${machineData.name} quebrou!** Conserte-a na \`/loja\`.`;
+             embedResult.setColor('#a60000'); // Cor vermelha para indicar que quebrou
+        } else {
+             embedResult.setFooter({ text: `Durabilidade restante: ${finalDurability}/${machineData.durability}`});
+        }
+
+        embedResult.setDescription(description);
+
+        // 6. Envia o resultado
+        await interaction.followUp({ embeds: [embedResult], ephemeral: false }); // Não efêmero para mostrar o resultado
+
+    } catch (err) {
+        console.error(`[ERRO][MaqExt.completeMining] Falha ao finalizar mineração para ${user_id}:`, err);
+        // Tenta enviar mensagem de erro genérica
+        try {
+            await interaction.followUp({ content: "❌ Ocorreu um erro ao processar os resultados da sua mineração.", ephemeral: true });
+        } catch {}
+        API.cacheLists.waiting.remove(user_id, 'mining'); // Garante remoção em caso de erro // TODO: Corrigir cacheLists
+        if (API.client?.emit) API.client.emit('error', err);
     }
-    return (machineData.profundidade || 0) + bonusDepth; // Soma base + bônus
 };
 
 /**
- * Obtém o estado de manutenção da máquina do usuário.
- * @param {string} user_id - ID do usuário.
- * @param {boolean} getDefault - (Não usado na versão MongoDB, mas mantido para compatibilidade de chamada).
- * @returns {Promise<object|null>} Objeto com dados de manutenção ou null.
+ * Calcula e atualiza a cotação dos minérios.
+ * @returns {Promise<object>} O objeto da nova cotação.
  */
-maqExtension.getMaintenance = async function(user_id, getDefault = false) { // getDefault não é mais necessário
-    const machineDoc = await API.client.db.findOne('machines', { user_id: user_id });
-    if (!machineDoc || !machineDoc.machine) return null; // Retorna null se não houver máquina
+maqExtension.forceCot = async function() {
+    // Requer a API aqui
+    const API = require('../index');
+    console.log("[MaqExt] Atualizando cotação dos minérios...".cyan);
+    const newCot = {};
+    const allOres = API.itemExtension.getObj()?.minerios || []; // Acesso seguro
 
-    const machineProduct = API.shopExtension.getProduct(machineDoc.machine);
-    if (!machineProduct) return null; // Retorna null se dados do produto não encontrados
+    allOres.forEach(ore => {
+        if (ore.id === undefined || ore.price === undefined) return; // Pula minérios malformados
 
-    // Função interna para calcular estado e preço de um componente
-    function calculateMaintenance(componentName, priceMultiplier, maxFromProduct, currentFromDoc, invertPercent = false) {
-        const maxValue = maxFromProduct || 0;
-        // Usa valor do DB ou o máximo como padrão (ou 0 para poluentes)
-        let currentValue = currentFromDoc ?? (componentName === 'pollutants' ? 0 : maxValue);
-        // Garante que o valor atual esteja dentro dos limites [0, maxValue]
-        currentValue = Math.max(0, Math.min(maxValue, currentValue));
+        const basePrice = ore.price;
+        // Lógica de variação de preço (Exemplo: +/- 15% do preço base)
+        const minVariation = 0.85; // -15%
+        const maxVariation = 1.15; // +15%
+        const randomFactor = Math.random() * (maxVariation - minVariation) + minVariation;
+        const newPrice = Math.max(1, Math.round(basePrice * randomFactor)); // Preço mínimo de 1
 
-        const percent = maxValue > 0 ? parseFloat(((currentValue / maxValue) * 100).toFixed(2)) : 0;
-        // Percentual usado para cálculo de preço (pode ser invertido)
-        const pricePercentBase = invertPercent ? (100 - percent) : percent;
-        // Ajuste específico para pressão baixa
-        const effectivePricePercent = (componentName === 'pressure' && percent < 20) ? (100 - percent) : pricePercentBase;
+        newCot[ore.id] = newPrice;
+    });
 
-        // Calcula o preço para "consertar" (ir de `effectivePricePercent` para 0% ou 100% dependendo do `invert`)
-        // A fórmula original parecia calcular o custo para consertar a parte "faltante" ou "excedente"
-        const price = Math.round(((effectivePricePercent / 100 * maxValue) * priceMultiplier) * (machineProduct.tier + 1));
+    this.cot = newCot; // Atualiza cotação em memória
+    this.proxcot = Date.now() + (API.getConfig().modules.cotacao * 60000); // Atualiza timestamp da próxima
 
-        return [currentValue, maxValue, percent, price];
+    // Salva a nova cotação no banco de dados (documento 'globals')
+    const filter = { _id: API.id }; // ID global (pode ser o ID do bot)
+    const update = { $set: { cotacao: this.cot } };
+    try {
+        // ALTERADO: Usando API.db
+        await API.db.updateOne('globals', filter, update, { upsert: true });
+        console.log(`[MaqExt] Nova cotação com ${Object.keys(this.cot).length} minérios salva no DB.`);
+    } catch (err) {
+        console.error("[ERRO][MaqExt.forceCot] Falha ao salvar cotação no DB:", err);
+        if (API.client?.emit) API.client.emit('error', err);
+        // A cotação em memória ainda está atualizada, mas não persistiu
     }
 
-    const durability = calculateMaintenance("durability", 0.45, machineProduct.durability, machineDoc.durability, false);
-    const pressure = calculateMaintenance("pressure", 0.00245, machineProduct.pressure, machineDoc.pressure, false);
-    const pollutants = calculateMaintenance("pollutants", 0.00545, machineProduct.pollutants, machineDoc.pollutants, false); // Não inverte, preço baseado no quanto TEM
-    const refrigeration = calculateMaintenance("refrigeration", 0.00445, machineProduct.refrigeration, machineDoc.refrigeration, true); // Inverte, preço baseado no quanto FALTA
-
-    return { durability, pressure, pollutants, refrigeration };
+    return this.cot;
 };
+
+/**
+ * Obtém a cotação atual dos minérios.
+ * @returns {object} Objeto da cotação.
+ */
+maqExtension.getCot = function() {
+    // Retorna a cotação em memória
+    return this.cot;
+};
+
+/**
+ * Obtém o timestamp (ms) da próxima atualização de cotação.
+ * @returns {number} Timestamp em milissegundos.
+ */
+maqExtension.getProxCot = function() {
+    return this.proxcot;
+};
+
+
+/**
+ * Carrega a cotação do banco de dados ao iniciar.
+ * (Deve ser chamado após a conexão com o DB estar pronta)
+ */
+maqExtension.loadCot = async function() {
+    // Requer a API aqui
+    const API = require('../index');
+    console.log("[MaqExt] Carregando cotação do banco de dados...".yellow);
+    try {
+        const filter = { _id: API.id };
+        const options = { projection: { cotacao: 1 } };
+        // ALTERADO: Usando API.db
+        const globalDoc = await API.db.findOne('globals', filter, options);
+
+        if (globalDoc && globalDoc.cotacao && Object.keys(globalDoc.cotacao).length > 0) {
+            this.cot = globalDoc.cotacao;
+            console.log(`[MaqExt] Cotação com ${Object.keys(this.cot).length} minérios carregada do DB.`);
+        } else {
+            console.warn("[MaqExt] Nenhuma cotação encontrada no DB. Gerando uma nova...");
+            await this.forceCot(); // Gera e salva uma nova se não existir
+        }
+    } catch (err) {
+        console.error("[ERRO][MaqExt.loadCot] Falha ao carregar cotação do DB:", err);
+        if (API.client?.emit) API.client.emit('error', err);
+        // Tenta gerar uma nova como fallback
+        console.warn("[MaqExt] Gerando nova cotação como fallback...");
+        await this.forceCot();
+    }
+};
+
+// REMOVIDO: Auto-carregamento da cotação ao importar o módulo.
+// Isso será chamado pelo client.start() ou pelo events.js load()
 
 module.exports = maqExtension;

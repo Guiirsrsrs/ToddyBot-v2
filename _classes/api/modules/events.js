@@ -1,7 +1,8 @@
 // _classes/api/modules/events.js
 
-const API = require('../index'); // API centralizada
-const DatabaseManager = API.DatabaseManager; // Instância
+const API = require('../index'); // API centralizada (que agora contém API.db)
+// REMOVIDO: Instância local não é mais necessária
+// const DatabaseManager = API.DatabaseManager; 
 const config = require('../../config'); // Config principal
 const { ChannelType } = require('discord.js'); // Importar ChannelType para verificação
 require('colors'); // Para logs
@@ -93,7 +94,8 @@ async function editRace(message) { // Renomeado parâmetro para 'message'
               events.race.rodando = false;
               events.race.interactionid = null;
               // Remove do DB também
-              await API.client.db.updateOne('globals', { _id: API.id }, { $unset: { 'events.race': "" } });
+              // ALTERADO: Usando API.db
+              await API.db.updateOne('globals', { _id: API.id }, { $unset: { 'events.race': "" } });
          }
          return;
     }
@@ -111,7 +113,8 @@ async function editRace(message) { // Renomeado parâmetro para 'message'
              // Se falhar ao editar (ex: mensagem deletada), para de tentar
              events.race.rodando = false;
              events.race.interactionid = null;
-             await API.client.db.updateOne('globals', { _id: API.id }, { $unset: { 'events.race': "" } });
+             // ALTERADO: Usando API.db
+             await API.db.updateOne('globals', { _id: API.id }, { $unset: { 'events.race': "" } });
         }
     }
     // Se o tempo acabou
@@ -134,11 +137,11 @@ async function editRace(message) { // Renomeado parâmetro para 'message'
         // Pagar vencedores
         for (const bet of apostasVencedoras) {
             const userId = bet.id;
-            const Payout = Math.round(bet.aposta * 1.5); // 50% de lucro
+            const payout = Math.round(bet.aposta * 1.5); // 50% de lucro (Nome da var 'Payout' corrigido para 'payout')
             try {
-                 // Usar API.eco atualizado para MongoDB
+                 // Usa API.eco (que já foi atualizado para usar API.db)
                  await API.eco.money.add(userId, payout);
-                 // await API.eco.money.globalremove(payout); // Precisa dessa lógica? Verificar eco.js
+                 // await API.eco.money.globalremove(payout); // Lógica de remover do bot (se necessário)
                  await API.eco.addToHistory(userId, `Aposta Corrida 🏇${corVencedorEmoji} | + ${API.utils.format(payout)} ${API.moneyemoji}`);
                  console.log(`[Events.Race] Pagou ${payout} para ${userId}`);
             } catch (payoutError) {
@@ -160,7 +163,8 @@ async function editRace(message) { // Renomeado parâmetro para 'message'
         events.race.interactionid = null;
         events.race.started = 0;
         // Limpa o estado da corrida no DB
-        await API.client.db.updateOne('globals', { _id: API.id }, { $unset: { 'events.race': "" } });
+        // ALTERADO: Usando API.db
+        await API.db.updateOne('globals', { _id: API.id }, { $unset: { 'events.race': "" } });
         console.log('[Events.Race] Estado da corrida limpo.');
     }
 }
@@ -311,7 +315,8 @@ events.forceRace = async function() {
         // Não salva as apostas no DB por enquanto, ficam em memória
     };
     const update = { $set: { "events.race": raceDataToSave } };
-    const dbResult = await API.client.db.updateOne('globals', filter, update, { upsert: true });
+    // ALTERADO: Usando API.db
+    const dbResult = await API.db.updateOne('globals', filter, update, { upsert: true });
 
     if (!dbResult || !(dbResult.modifiedCount > 0 || dbResult.upsertedCount > 0)) {
          console.error("[ERRO][Events.Race] Falha ao salvar estado inicial da corrida no banco de dados!");
@@ -348,7 +353,8 @@ events.load = async function() {
         // Carrega estado da Corrida
         const filter = { _id: API.id }; // ID do bot
         const options = { projection: { events: 1 } };
-        const globalDoc = await API.client.db.findOne('globals', filter, options);
+        // ALTERADO: Usando API.db
+        const globalDoc = await API.db.findOne('globals', filter, options);
 
         if (globalDoc?.events?.race && globalDoc.events.race.rodando) {
             const savedRace = globalDoc.events.race;
@@ -450,6 +456,7 @@ events.load = async function() {
                   // Lógica adicional (transferir dinheiro/token do bot) mantida
                   const botUser = API.client?.user;
                   if (botUser) {
+                       // As chamadas API.eco já usam API.db internamente
                        const botMoney = await API.eco.money.get(botUser.id);
                        if (botMoney > 1000000) {
                             await API.eco.money.remove(botUser.id, 1000000);

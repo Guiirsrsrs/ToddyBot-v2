@@ -84,7 +84,7 @@ const API = {
     // ATUALIZAÇÃO v14: Anexar módulos importados
     ...modules,
 
-    // Client and Discord object will be added by NisrukshaClient constructor
+    // Client and Discord object will be added by ToddyClient constructor
     client: null,
     Discord: null // ATUALIZAÇÃO v14: Será preenchido pelo Client, mas deve ser evitado
 };

@@ -1,24 +1,15 @@
 // _classes/api/index.js
 
-// --- Core Imports ---
-const { prefix, owner, token, ip, app } = require("../config");
-const version = require('../../package.json').version;
-const DatabaseManager = require('../manager/DatabaseManager'); // IMPORTA A CLASSE, NÃO CRIA INSTÂNCIA
-const discordJS = require('discord.js');
+// Importa e reexporta o DatabaseManager para fácil acesso
+const DatabaseManager = require('../manager/DatabaseManager');
 
-// --- Discord.js Builders & Components ---
-const {
-    EmbedBuilder, ButtonBuilder, ActionRowBuilder, SelectMenuBuilder, ButtonStyle, Collection
-} = discordJS;
+// Carrega todos os módulos e utilitários
+const API = {
+    // Gestor de Base de Dados (Instância será injetada pelo ToddyClient)
+    db: null, // Será preenchido pelo client.start()
+    DatabaseManager: DatabaseManager, // Exporta a classe para referência (se necessário)
 
-// --- Utility Modules Imports ---
-const botUtils = require('./utils/botUtils');
-const dbUtils = require('./utils/dbUtils');
-const discordUtils = require('./utils/discordUtils');
-const formatUtils = require('./utils/formatUtils');
-
-// --- System Modules Imports ---
-const modules = {
+    // Módulos principais (carregados na ordem ou alfabeticamente)
     badges: require('./modules/badges'),
     cacheLists: require('./modules/cacheLists'),
     company: require('./modules/company'),
@@ -33,83 +24,70 @@ const modules = {
     playerUtils: require('./modules/playerUtils'),
     shopExtension: require('./modules/shopExtension'),
     siteExtension: require('./modules/siteExtension'),
-    townExtension: require('./modules/townExtension')
-};
+    townExtension: require('./modules/townExtension'),
 
-// --- API Object Construction ---
-let API = {
-    // --- Core Info & Config ---
-    prefix, owner, token, ip, app, version, id: app.id,
-
-    // --- Bot State & Logs ---
-    debug: false,
-    logs: { cmds: true, falhas: true },
-    lastsave: '',
-    cmdsexec: 0,
-    playerscmds: [],
-
-    // --- String Constants ---
-    money: 'moedas', moneyemoji: '<:moneybag:736290479406317649>',
-    money2: 'cristais', money2emoji: '<:estilhas:743176785986060390>',
-    money3: 'fichas', money3emoji: '<:ficha:741827151879471115>',
-    tp: { name: 'pontos temporais', emoji: '<:tp:841870541274087455>' },
-    mastery: { name: 'pontos de maestria', emoji: '🔰' },
-
-    // --- Core Components ---
-    DatabaseManager: DatabaseManager, // EXPORTA A CLASSE, NÃO A INSTÂNCIA
-    client: null,
-    Discord: discordJS,
-
-    // --- Discord.js Builders & Components ---
-    EmbedBuilder, ButtonBuilder, ActionRowBuilder, SelectMenuBuilder, ButtonStyle, Collection,
-
-    // --- Utility Functions ---
+    // Utilitários
     utils: {
-        bot: botUtils,
-        db: dbUtils,
-        discord: discordUtils,
-        format: formatUtils,
-        ms: formatUtils.ms,
-        ms2: formatUtils.ms2,
-        format: formatUtils.format,
-        getProgress: formatUtils.getProgress,
-        toNumber: formatUtils.toNumber,
-        getFormatedDate: formatUtils.getFormatedDate,
-        random: botUtils.random,
-        clone: botUtils.clone,
-        sendError: discordUtils.sendError,
-        createButton: discordUtils.createButton,
-        createMenu: discordUtils.createMenu,
-        rowComponents: discordUtils.rowComponents,
-        editOrReply: discordUtils.editOrReply,
+        ...require('./utils/botUtils'),     // Funções gerais (random, ms, clone, etc.)
+        ...require('./utils/dbUtils'),      // Funções específicas de DB (setCompanieInfo)
+        discord: require('./utils/discordUtils'), // Funções do Discord (createButton, findMember, etc.)
+        format: require('./utils/formatUtils'), // Funções de formatação (format, getProgress, etc.) - Renomeado para evitar conflito com botUtils.format
     },
 
-    // --- System Modules ---
-    ...modules,
-
-    // --- Funções Específicas com Contexto (Wrappers) ---
-    getBotInfoProperties: async () => {
-        const currentState = {
-            lastsave: API.lastsave,
-            cmdsexec: API.cmdsexec,
-            playerscmds: API.playerscmds,
-            cacheLists: API.cacheLists,
-            version: API.version
-        };
-        
-        if (!API.client) {
-            console.warn("[API.getBotInfoProperties] Chamado antes do API.client ser definido.");
-            return new EmbedBuilder().setTitle("Bot Status").setDescription("Aguardando inicialização...");
-        }
-        return await botUtils.getBotInfoProperties(API.client, currentState);
+    // Referências (serão injetadas pelo ToddyClient)
+    client: null,
+    Discord: null, // Módulo discord.js
+    // Adiciona constantes úteis (Exemplo)
+    money: 'nisruk',
+    moneyemoji: '<:nisruk:770051774305861643>',
+    money2: 'Cristal',
+    money2emoji: '<:cristal:770051774015905793>',
+    money3: 'Ficha',
+    money3emoji: '<:ficha:770051773950689330>',
+    tp: {
+        name: 'Ponto Temporal',
+        emoji: '<:pt:807671407284715540>'
     },
-    
-    setCompanieInfo: (user_id, company_id, field, value) => {
-        if (!API.client) {
-             console.warn("[API.setCompanieInfo] Chamado antes do API.client ser definido.");
-        }
-        return dbUtils.setCompanieInfo(user_id, company_id, field, value, API.client);
-    },
+    ObjectId: require('mongodb').ObjectId, // Exporta ObjectId para uso fácil
+    getConfig: () => require('../config'), // Função para obter config atualizada
+    id: require('../config').app.id // ID da aplicação (bot)
 };
+
+// --- Funções Globais Simplificadas (Wrappers para DatabaseManager) ---
+// Adiciona os wrappers dbget, dbset, dbincrement diretamente na API
+// para manter a compatibilidade com o código antigo que usava API.client.dbget, etc.
+// Estes agora usarão API.db (a instância centralizada).
+
+API.dbget = async (id, collectionName, idField = 'user_id') => {
+    // Garante que API.db está disponível
+    if (!API.db) {
+        console.error("[ERRO FATAL API.dbget] API.db não inicializado!".red);
+        return null; // Ou lançar erro
+    }
+    return await API.db.get(id, collectionName, idField);
+};
+
+API.dbset = async (id, collectionName, field, value, idField = 'user_id') => {
+    if (!API.db) {
+        console.error("[ERRO FATAL API.dbset] API.db não inicializado!".red);
+        return null;
+    }
+    return await API.db.set(id, collectionName, field, value, idField);
+};
+
+API.dbincrement = async (id, collectionName, field, value, idField = 'user_id') => {
+    if (!API.db) {
+        console.error("[ERRO FATAL API.dbincrement] API.db não inicializado!".red);
+        return null;
+    }
+    return await API.db.increment(id, collectionName, field, value, idField);
+};
+
+
+// Inicializa módulos que precisam de carregamento pós-API (se houver)
+// Ex: Se algum módulo dependesse de outro já carregado na API
+// API.moduleX.initialize(API);
+
+console.log('[API Index] Módulos e Utilitários carregados e exportados.');
 
 module.exports = API;

@@ -1,126 +1,102 @@
 // _classes/manager/ShardingManager.js
 
 const { ShardingManager } = require('discord.js');
-const colors = require('colors');
 const path = require('path');
+require('colors');
 
-class NisrukshaShardManager extends ShardingManager {
+class NisrukshaShardManager {
+    constructor(config) {
+        this.config = config;
+        this.token = this.validateToken(config); // Valida e obtém o token
 
-    constructor(options = {}) {
-        const mainBotFile = path.join(__dirname, '..', '..', 'index.js');
-        const totalShards = options.sharding?.shardAmount > 0 ? options.sharding.shardAmount : 'auto';
-        const tokenFromOptions = options.app?.token;
-
-        console.log("[ShardingManager DEBUG] Token recebido via options:", tokenFromOptions ? `Encontrado (termina com ...${tokenFromOptions.slice(-5)})` : "NÃO RECEBIDO!".red);
-
-        // CRÍTICO: Validar token ANTES de passar para o super()
-        if (!tokenFromOptions) {
-            console.error('[ShardingManager] ERRO CRÍTICO: Token não fornecido nas opções! Verifique config.js e .env.'.red);
+        if (!this.token) {
+            console.error('[ShardingManager] ERRO CRÍTICO: Token não encontrado na configuração ou ambiente!'.red);
             process.exit(1);
         }
 
-        super(mainBotFile, {
-            totalShards: totalShards,
-            token: tokenFromOptions, // ← Token DEVE estar aqui
-            respawn: true,
-            // ADICIONAR: Passar variáveis de ambiente para os shards
-            shardArgs: [],
-            execArgv: []
+        // Injeta o token no ambiente para que os shards filhos possam lê-lo
+        // Isso permite que ToddyClient use process.env.DISCORD_TOKEN como fallback
+        process.env.DISCORD_TOKEN = this.token;
+        console.log('[ShardingManager] Token injetado no process.env para os shards filhos.'.cyan);
+
+
+        // Configuração do ShardingManager
+        const shardConfig = {
+            token: this.token,
+            totalShards: config.sharding?.totalShards || 'auto', // Usa 'auto' ou valor da config
+            shardArgs: [], // Argumentos extras para passar aos shards, se necessário
+            execArgv: [], // Argumentos extras para passar ao processo Node.js dos shards
+            respawn: config.sharding?.respawn !== undefined ? config.sharding.respawn : true, // Padrão é respawnar
+            mode: config.sharding?.mode || 'process', // 'process' ou 'worker'
+        };
+
+        // Caminho para o arquivo que inicia cada shard (index.js)
+        const shardFilePath = path.join(__dirname, '..', '..', 'index.js'); // ../../index.js
+
+        this.manager = new ShardingManager(shardFilePath, shardConfig);
+
+        console.log(`[ShardingManager] Configurado para iniciar com ${shardConfig.totalShards === 'auto' ? 'um número automático de' : shardConfig.totalShards} shards.`);
+
+        // --- Handlers de Eventos do ShardingManager ---
+        this.manager.on('shardCreate', shard => {
+            console.log(`[Shard ${shard.id}] Iniciada com PID: ${shard.process?.pid ?? 'N/A'}.`.green);
+
+            shard.on('ready', () => {
+                console.log(`[Shard ${shard.id}] READY.`.cyan.bold);
+            });
+            shard.on('disconnect', () => {
+                console.warn(`[Shard ${shard.id}] Desconectado.`.yellow);
+            });
+            shard.on('reconnecting', () => {
+                console.warn(`[Shard ${shard.id}] Reconectando...`.yellow);
+            });
+            shard.on('death', (process) => {
+                 console.error(`[Shard ${shard.id}] Processo morreu. Sinal: ${process.signalCode}, Código: ${process.exitCode}. Respawn: ${shard.manager.respawn}.`.red.bold);
+                 // Adicionar log mais detalhado ou notificação aqui se necessário
+            });
+            shard.on('error', (error) => {
+                 console.error(`[Shard ${shard.id}] ERRO:`, error);
+                 // Logar o erro, pode ser útil para depuração
+            });
         });
 
-        this.options = options;
-
-        // CRÍTICO: Injetar o token no ambiente para os shards filhos lerem
-        process.env.DISCORD_TOKEN = tokenFromOptions;
-        
-        console.log("[ShardingManager] Token injetado no process.env para os shards filhos.".green);
-
-        // Listeners de Eventos
-        this.on('shardCreate', shard => this.onShardCreate(shard));
-        this.on('shardError', (error, shardId) => this.onShardError(error, shardId));
-
-        console.log(`[ShardingManager] Configurado para iniciar com ${totalShards === 'auto' ? 'um número automático de' : totalShards} shards.`.cyan);
-
-        // Graceful Shutdown
-        process.on('SIGINT', () => this.shutdown('SIGINT'));
-        process.on('SIGTERM', () => this.shutdown('SIGTERM'));
+        // Opcional: Lidar com mensagens entre shards ou do manager para shards
+        // this.manager.on('message', (shard, message) => {
+        //     console.log(`[Shard ${shard.id}] Recebeu mensagem:`, message);
+        // });
     }
 
-    log(shardId, message, level = 'info') {
-        const timestamp = new Date().toISOString();
-        const shardTag = `[Shard ${shardId}]`.magenta;
-        const logMessage = `[${timestamp}] ${shardTag} ${message}`;
+    validateToken(config) {
+        let finalToken = config.app?.token; // Tenta obter da config
+        console.log(`[ShardingManager DEBUG] Token recebido via options: ${finalToken ? `Encontrado (termina com ...${finalToken.slice(-5)})` : "NÃO ENCONTRADO!"}`);
 
-        switch (level) {
-            case 'error': console.error(logMessage.red); break;
-            case 'warn': console.warn(logMessage.yellow); break;
-            case 'info': console.log(logMessage.blue); break;
-            case 'debug': console.log(logMessage.grey); break;
-            case 'ready': console.log(logMessage.green); break;
-            default: console.log(logMessage);
+        // Tenta obter do ambiente se não encontrado na config
+        // (Isso serve como fallback se a config não for passada corretamente)
+        if (!finalToken) {
+            const envToken = process.env.DISCORD_TOKEN;
+             console.log(`[ShardingManager DEBUG] Token recebido via process.env: ${envToken ? `Encontrado (termina com ...${envToken.slice(-5)})` : "NÃO ENCONTRADO!"}`);
+             if (envToken) {
+                  finalToken = envToken;
+             }
         }
+        return finalToken;
     }
 
-    onShardCreate(shard) {
-        this.log(shard.id, `Iniciada com PID: ${shard.process?.pid || 'N/A'}.`, 'ready');
-
-        shard.on('ready', () => {
-             this.log(shard.id, 'Pronta e conectada ao Discord.', 'ready');
-        });
-
-        shard.on('disconnect', (event) => {
-             this.log(shard.id, `Desconectada. Código: ${event?.code || 'N/A'}. Tentando reconectar...`, 'warn');
-        });
-
-        shard.on('reconnecting', () => {
-             this.log(shard.id, 'Reconectando...', 'warn');
-        });
-
-        shard.on('death', (process) => {
-             this.log(shard.id, `Processo morreu. Sinal: ${process.signalCode}, Código: ${process.exitCode}. Respawn: ${this.respawn}.`, 'error');
-        });
-
-         shard.on('error', (error) => {
-             console.error(`[${new Date().toISOString()}] [Shard ${shard.id}]`.magenta, `Erro interno:`.yellow, error);
-         });
-
-         shard.on('message', (message) => {
-             this.log(shard.id, `Recebeu mensagem: ${JSON.stringify(message)}`, 'debug');
-         });
-    }
-
-    onShardError(error, shardId) {
-        this.log(shardId, `Erro fatal encontrado: ${error.message}`, 'error');
-        console.error(error.stack);
-    }
 
     async connect() {
-        this.log('Manager', 'Iniciando spawn dos shards...');
+        console.log('[Shard Manager] Iniciando spawn dos shards...'.yellow);
         try {
-            await this.spawn({ amount: this.totalShards, delay: 5500, timeout: 60000 });
-            this.log('Manager', `Todos os ${this.shards.size} shards foram iniciados.`);
-        } catch (error) {
-            console.error('[ShardingManager] ERRO ao iniciar shards:'.red, error);
+            await this.manager.spawn({
+                amount: this.manager.totalShards, // Número de shards a iniciar
+                delay: this.config.sharding?.spawnDelay || 5500, // Delay entre spawns
+                timeout: this.config.sharding?.spawnTimeout || 30000 // Timeout para shard ficar ready
+            });
+            console.log('[Shard Manager] Todos os shards foram iniciados.'.green);
+        } catch (err) {
+            console.error('[ShardingManager] ERRO ao iniciar shards:'.red, err);
+            // Considerar limpar processos filhos ou sair
             process.exit(1);
         }
-    }
-
-    shutdown(signal) {
-        console.log(`[ShardingManager] Recebido sinal ${signal}. Desligando shards...`.yellow);
-        this.broadcastEval(client => client.destroy())
-          .then(() => {
-              console.log('[ShardingManager] Todos os shards foram instruídos a desligar.'.green);
-              process.exit(0);
-          })
-          .catch(err => {
-              console.error('[ShardingManager] Erro ao desligar shards:'.red, err);
-              process.exit(1);
-          });
-
-         setTimeout(() => {
-             console.warn('[ShardingManager] Timeout de desligamento. Forçando saída.'.yellow);
-             process.exit(1);
-         }, 10000);
     }
 }
 

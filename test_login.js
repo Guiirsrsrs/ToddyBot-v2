@@ -1,58 +1,57 @@
-require('dotenv').config();
-require('colors');
+// test_minimal_login.js
+require('dotenv').config(); // Para carregar o token do .env
+require('colors'); // Para logs coloridos
 
-const config = require('./_classes/config');
-const { connectDB } = require('./_classes/db');
+// Importa apenas o necessário do discord.js
+const { Client, GatewayIntentBits, IntentsBitField } = require('discord.js');
 
-// Verificar se deve usar Sharding ou não
-const useSharding = process.env.USE_SHARDING === 'true' || config.sharding?.shardAmount !== 1;
+console.log('--- Teste de Login Mínimo ---'.yellow);
 
-async function startBot() {
-    console.log('[STARTUP] Iniciando Nisruksha Bot...'.cyan);
-    
-    // Conectar ao MongoDB ANTES de iniciar o bot
-    try {
-        console.log('[STARTUP] Conectando ao MongoDB...'.yellow);
-        await connectDB();
-        console.log('[STARTUP] MongoDB conectado com sucesso!'.green);
-    } catch (error) {
-        console.error('[STARTUP] ERRO FATAL: Falha ao conectar ao MongoDB:'.red, error);
-        process.exit(1);
-    }
+// Obtém o token diretamente do ambiente (como o ShardingManager faz)
+const token = process.env.DISCORD_TOKEN;
 
-    if (useSharding) {
-        // Modo Sharding
-        console.log('[STARTUP] Iniciando em modo SHARDING...'.cyan);
-        const NisrukshaShardManager = require('./_classes/manager/ShardingManager');
-        
-        const manager = new NisrukshaShardManager(config);
-        
-        try {
-            await manager.connect();
-            console.log('[STARTUP] Sharding Manager iniciado com sucesso!'.green);
-        } catch (error) {
-            console.error('[STARTUP] ERRO ao iniciar Sharding Manager:'.red, error);
-            process.exit(1);
-        }
-    } else {
-        // Modo Single Instance (sem sharding)
-        console.log('[STARTUP] Iniciando em modo SINGLE INSTANCE (sem sharding)...'.cyan);
-        const NisrukshaClient = require('./_classes/NisrukshaClient');
-        
-        const client = new NisrukshaClient(config);
-        
-        try {
-            await client.login();
-            console.log('[STARTUP] Bot iniciado com sucesso!'.green);
-        } catch (error) {
-            console.error('[STARTUP] ERRO ao fazer login:'.red, error);
-            process.exit(1);
-        }
-    }
+if (!token) {
+    console.error('ERRO: Token DISCORD_TOKEN não encontrado no ficheiro .env!'.red);
+    process.exit(1);
+} else {
+    console.log(`Token encontrado (termina com ...${token.slice(-5)})`.green);
 }
 
-// Iniciar o bot
-startBot().catch(error => {
-    console.error('[STARTUP] ERRO FATAL NÃO TRATADO:'.red, error);
-    process.exit(1);
+// Define as mesmas intents que o seu NisrukshaClient usa
+const myIntents = new IntentsBitField().add(
+    GatewayIntentBits.Guilds,
+    GatewayIntentBits.GuildMessageReactions,
+    GatewayIntentBits.GuildMessages,
+    GatewayIntentBits.MessageContent,
+    GatewayIntentBits.GuildMembers
+);
+
+console.log('Intents definidos:', myIntents.toArray());
+
+// Cria um cliente Discord básico
+const client = new Client({
+    intents: myIntents
+    // Não adicionamos allowedMentions aqui para simplificar
 });
+
+console.log('Cliente Discord criado. Tentando fazer login...'.cyan);
+
+// Evento 'ready' para saber se o login funcionou
+client.once('ready', () => {
+    console.log(`--- SUCESSO! --- Login realizado como ${client.user.tag}`.green.bold);
+    client.destroy(); // Desconecta após o teste
+    process.exit(0); // Sai com sucesso
+});
+
+// Evento 'error' para capturar erros durante o login ou conexão
+client.on('error', (error) => {
+    console.error('--- ERRO NO CLIENTE DISCORD ---'.red.bold, error);
+});
+
+// Tenta fazer o login
+client.login(token).catch(err => {
+    console.error('--- ERRO AO CHAMAR LOGIN() ---'.red.bold, err);
+    process.exit(1); // Sai com erro se o login() falhar imediatamente
+});
+
+console.log('Chamada client.login() efetuada. Aguardando eventos...');

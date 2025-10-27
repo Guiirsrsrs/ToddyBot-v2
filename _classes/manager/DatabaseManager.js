@@ -1,4 +1,4 @@
-// _classes/manager/API.client.dbjs
+// _classes/manager/DatabaseManager.js
 const { connectDB } = require('../db'); // Importa a função de conexão do MongoDB
 const API = require('../api'); // Importa a API centralizada (para acesso ao client para emitir erros)
 require('colors'); // Para logs coloridos
@@ -8,6 +8,32 @@ class DatabaseManager {
         this.db = null; // Instância do banco de dados será armazenada aqui
         this.connectionPromise = null; // Para garantir que a conexão seja feita apenas uma vez
     }
+
+    /**
+     * NOVO MÉTODO: Força a conexão inicial e aguarda.
+     * Usado pelo client.start() para garantir que o DB esteja pronto.
+     * @returns {Promise<import('mongodb').Db>}
+     */
+    async connect() {
+        if (this.db) {
+            return this.db;
+        }
+        if (this.connectionPromise) {
+            return this.connectionPromise;
+        }
+
+        // A lógica em _getDb() já é perfeita para conectar,
+        // então vamos apenas chamá-la e aguardá-la.
+        try {
+            await this._getDb();
+            console.log("[DBManager] Conexão explícita (connect()) bem-sucedida.".cyan);
+            return this.db;
+        } catch (err) {
+            console.error("[DBManager] Falha na conexão explícita (connect()):".red, err);
+            throw err; // Lança o erro para o client.start() parar o boot
+        }
+    }
+
 
     /**
      * Garante que a conexão com o banco de dados esteja estabelecida e retorna a instância.
@@ -225,6 +251,7 @@ class DatabaseManager {
     }
 
     // --- Métodos Adaptados da Interface Antiga ---
+    // (Estes métodos serão usados pela API, ex: API.db.get, API.db.set)
 
     /**
      * Obtém um documento por ID (geralmente user_id ou server_id).

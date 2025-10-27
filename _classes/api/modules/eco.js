@@ -1,8 +1,8 @@
 // _classes/api/modules/eco.js
 
-// Importar API centralizada e DatabaseManager (ajustar caminhos se necessário)
+// Importar API centralizada (que agora contém API.db)
 const API = require('../index');
-const DatabaseManager = new API.DatabaseManager();
+// REMOVIDO: const DatabaseManager = new API.DatabaseManager();
 const fs = require('fs');
 const path = require('path');
 const insertLine = require('insert-line');
@@ -28,7 +28,8 @@ function randomString(length) {
  */
 tp.get = async function (user_id) {
     const filter = { user_id: user_id };
-    let doc = await API.client.db.findOne('players_utils', filter);
+    // ALTERADO: Usando a instância centralizada API.db
+    let doc = await API.db.findOne('players_utils', filter);
 
     let inviteData = doc?.invite; // Tenta obter os dados existentes
 
@@ -45,7 +46,8 @@ tp.get = async function (user_id) {
         };
 
         // Salva os novos dados no banco de dados
-        await API.client.db.updateOne('players_utils', filter, { $set: { invite: inviteData } }, { upsert: true });
+        // ALTERADO: Usando a instância centralizada API.db
+        await API.db.updateOne('players_utils', filter, { $set: { invite: inviteData } }, { upsert: true });
 
         // Retorna os dados recém-criados
         return inviteData;
@@ -63,7 +65,8 @@ tp.get = async function (user_id) {
 tp.check = async function (code) {
     // Busca otimizada diretamente pelo código
     const filter = { 'invite.code': code }; // Busca dentro do subdocumento 'invite'
-    const doc = await API.client.db.findOne('players_utils', filter, { projection: { user_id: 1 } }); // Pega apenas o user_id
+    // ALTERADO: Usando a instância centralizada API.db
+    const doc = await API.db.findOne('players_utils', filter, { projection: { user_id: 1 } }); // Pega apenas o user_id
 
     if (doc) {
         return { exists: true, owner: doc.user_id };
@@ -84,7 +87,8 @@ tp.add = async function (user_id, pointsToAdd) {
     // Poderia ser feito com pipelines de agregação, mas $inc com upsert geralmente cria a estrutura.
     // Vamos garantir que 'invite' exista primeiro (get faz isso)
     await tp.get(user_id);
-    await API.client.db.updateOne('players_utils', filter, { $inc: { 'invite.points': value } }, { upsert: true });
+    // ALTERADO: Usando a instância centralizada API.db
+    await API.db.updateOne('players_utils', filter, { $inc: { 'invite.points': value } }, { upsert: true });
 };
 
 /**
@@ -107,7 +111,8 @@ tp.set = async function (user_id, pointsValue) {
     const value = Number(pointsValue) || 0;
     // Garante que o campo 'invite' exista
     await tp.get(user_id);
-    await API.client.db.updateOne('players_utils', filter, { $set: { 'invite.points': value } }, { upsert: true });
+    // ALTERADO: Usando a instância centralizada API.db
+    await API.db.updateOne('players_utils', filter, { $set: { 'invite.points': value } }, { upsert: true });
 };
 
 
@@ -120,7 +125,8 @@ const bank = {};
  * @returns {Promise<number>} Saldo do banco (padrão 0).
  */
 bank.get = async function (user_id) {
-    const doc = await API.client.db.findOne('players', { user_id: user_id }, { projection: { bank: 1 } });
+    // ALTERADO: Usando a instância centralizada API.db
+    const doc = await API.db.findOne('players', { user_id: user_id }, { projection: { bank: 1 } });
     return doc?.bank || 0; // Retorna 0 se doc ou bank não existir
 };
 
@@ -130,7 +136,8 @@ bank.get = async function (user_id) {
  * @param {number} moneyToAdd - Quantidade a adicionar.
  */
 bank.add = async function (user_id, moneyToAdd) {
-    await API.client.dbincrement(user_id, 'players', 'bank', moneyToAdd, 'user_id');
+    // ALTERADO: Usando API.db.increment (método real do DatabaseManager)
+    await API.db.increment(user_id, 'players', 'bank', moneyToAdd, 'user_id');
 };
 
 /**
@@ -139,7 +146,8 @@ bank.add = async function (user_id, moneyToAdd) {
  * @param {number} moneyToRemove - Quantidade a remover.
  */
 bank.remove = async function (user_id, moneyToRemove) {
-    await API.client.dbincrement(user_id, 'players', 'bank', -moneyToRemove, 'user_id');
+    // ALTERADO: Usando API.db.increment
+    await API.db.increment(user_id, 'players', 'bank', -moneyToRemove, 'user_id');
 };
 
 /**
@@ -149,7 +157,8 @@ bank.remove = async function (user_id, moneyToRemove) {
  */
 bank.set = async function (user_id, moneyValue) {
     const value = parseInt(moneyValue) || 0; // Garante que é inteiro
-    await API.client.dbset(user_id, 'players', 'bank', value, 'user_id');
+    // ALTERADO: Usando API.db.set (método real do DatabaseManager)
+    await API.db.set(user_id, 'players', 'bank', value, 'user_id');
 };
 
 
@@ -162,7 +171,8 @@ const points = {};
  * @returns {Promise<number>} Quantidade de cristais (padrão 0).
  */
 points.get = async function (user_id) {
-    const doc = await API.client.db.findOne('players', { user_id: user_id }, { projection: { points: 1 } });
+    // ALTERADO: Usando API.db.findOne
+    const doc = await API.db.findOne('players', { user_id: user_id }, { projection: { points: 1 } });
     return doc?.points || 0;
 };
 
@@ -172,7 +182,8 @@ points.get = async function (user_id) {
  * @param {number} pointsToAdd - Quantidade a adicionar.
  */
 points.add = async function (user_id, pointsToAdd) {
-    await API.client.dbincrement(user_id, 'players', 'points', pointsToAdd, 'user_id');
+    // ALTERADO: Usando API.db.increment
+    await API.db.increment(user_id, 'players', 'points', pointsToAdd, 'user_id');
 };
 
 /**
@@ -181,7 +192,8 @@ points.add = async function (user_id, pointsToAdd) {
  * @param {number} pointsToRemove - Quantidade a remover.
  */
 points.remove = async function (user_id, pointsToRemove) {
-    await API.client.dbincrement(user_id, 'players', 'points', -pointsToRemove, 'user_id');
+    // ALTERADO: Usando API.db.increment
+    await API.db.increment(user_id, 'players', 'points', -pointsToRemove, 'user_id');
 };
 
 /**
@@ -190,7 +202,8 @@ points.remove = async function (user_id, pointsToRemove) {
  * @param {number} pointsValue - Quantidade exata.
  */
 points.set = async function (user_id, pointsValue) {
-    await API.client.dbset(user_id, 'players', 'points', Number(pointsValue) || 0, 'user_id');
+    // ALTERADO: Usando API.db.set
+    await API.db.set(user_id, 'players', 'points', Number(pointsValue) || 0, 'user_id');
 };
 
 
@@ -203,7 +216,8 @@ const money = {};
  * @returns {Promise<number>} Quantidade de moedas (padrão 0).
  */
 money.get = async function (user_id) {
-    const doc = await API.client.db.findOne('players', { user_id: user_id }, { projection: { money: 1 } });
+    // ALTERADO: Usando API.db.findOne
+    const doc = await API.db.findOne('players', { user_id: user_id }, { projection: { money: 1 } });
     return doc?.money || 0;
 };
 
@@ -213,7 +227,8 @@ money.get = async function (user_id) {
  * @param {number} moneyToAdd - Quantidade a adicionar.
  */
 money.add = async function (user_id, moneyToAdd) {
-    await API.client.dbincrement(user_id, 'players', 'money', moneyToAdd, 'user_id');
+    // ALTERADO: Usando API.db.increment
+    await API.db.increment(user_id, 'players', 'money', moneyToAdd, 'user_id');
 };
 
 /**
@@ -221,7 +236,7 @@ money.add = async function (user_id, moneyToAdd) {
  * @param {number} moneyToAdd - Quantidade a adicionar.
  */
 money.globaladd = async function (moneyToAdd) {
-    // Assumindo que API.id é o ID do bot
+    // Assumindo que API.id é o ID do bot (Esta parte não muda)
     await money.add(API.id, moneyToAdd);
 };
 
@@ -231,7 +246,8 @@ money.globaladd = async function (moneyToAdd) {
  * @param {number} moneyToRemove - Quantidade a remover.
  */
 money.remove = async function (user_id, moneyToRemove) {
-    await API.client.dbincrement(user_id, 'players', 'money', -moneyToRemove, 'user_id');
+    // ALTERADO: Usando API.db.increment
+    await API.db.increment(user_id, 'players', 'money', -moneyToRemove, 'user_id');
 };
 
 /**
@@ -239,7 +255,7 @@ money.remove = async function (user_id, moneyToRemove) {
  * @param {number} moneyToRemove - Quantidade a remover.
  */
 money.globalremove = async function (moneyToRemove) {
-    // Assumindo que API.id é o ID do bot
+    // Assumindo que API.id é o ID do bot (Esta parte não muda)
     await money.remove(API.id, moneyToRemove);
 };
 
@@ -250,7 +266,8 @@ money.globalremove = async function (moneyToRemove) {
  */
 money.set = async function (user_id, moneyValue) {
     const value = parseInt(Math.round(moneyValue)) || 0; // Garante que é inteiro
-    await API.client.dbset(user_id, 'players', 'money', value, 'user_id');
+    // ALTERADO: Usando API.db.set
+    await API.db.set(user_id, 'players', 'money', value, 'user_id');
 };
 
 
@@ -263,7 +280,8 @@ const token = {};
  * @returns {Promise<number>} Quantidade de fichas (padrão 0).
  */
 token.get = async function (user_id) {
-    const doc = await API.client.db.findOne('players', { user_id: user_id }, { projection: { token: 1 } });
+    // ALTERADO: Usando API.db.findOne
+    const doc = await API.db.findOne('players', { user_id: user_id }, { projection: { token: 1 } });
     return doc?.token || 0;
 };
 
@@ -273,7 +291,8 @@ token.get = async function (user_id) {
  * @param {number} tokenToAdd - Quantidade a adicionar.
  */
 token.add = async function (user_id, tokenToAdd) {
-    await API.client.dbincrement(user_id, 'players', 'token', tokenToAdd, 'user_id');
+    // ALTERADO: Usando API.db.increment
+    await API.db.increment(user_id, 'players', 'token', tokenToAdd, 'user_id');
 };
 
 /**
@@ -282,7 +301,8 @@ token.add = async function (user_id, tokenToAdd) {
  * @param {number} tokenToRemove - Quantidade a remover.
  */
 token.remove = async function (user_id, tokenToRemove) {
-    await API.client.dbincrement(user_id, 'players', 'token', -tokenToRemove, 'user_id');
+    // ALTERADO: Usando API.db.increment
+    await API.db.increment(user_id, 'players', 'token', -tokenToRemove, 'user_id');
 };
 
 /**
@@ -291,7 +311,8 @@ token.remove = async function (user_id, tokenToRemove) {
  * @param {number} tokenValue - Quantidade exata.
  */
 token.set = async function (user_id, tokenValue) {
-    await API.client.dbset(user_id, 'players', 'token', Number(tokenValue) || 0, 'user_id');
+    // ALTERADO: Usando API.db.set
+    await API.db.set(user_id, 'players', 'token', Number(tokenValue) || 0, 'user_id');
 };
 
 
@@ -307,6 +328,7 @@ const eco = {
 
 // --- Funções de Histórico (Sistema de Arquivos Local) ---
 // (Mantidas como antes, pois não usam o banco de dados principal)
+// (Nenhuma alteração necessária aqui, pois API.client ainda é válido)
 
 const historyBaseDir = path.resolve(__dirname, '..', '..', '..', '_localdata/profiles/'); // Caminho base
 

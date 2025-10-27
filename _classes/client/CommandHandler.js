@@ -5,80 +5,74 @@ const { REST } = require('@discordjs/rest');
 const { Routes } = require('discord-api-types/v10');
 const glob = require('glob');
 const path = require('path');
+require('colors'); // Adicionado
 
 class CommandHandler {
     constructor(client, api, options) {
         this.client = client;
         this.API = api;
-        this.options = options; // Guardar options para usar no loadSlashCommands
-        this.commandsPath = path.join(__dirname, '..', '..', 'commands', '*/*.js'); // Ajuste se necessário
-        this.commands = new Collection(); // Coleção para guardar os comandos carregados
+        this.options = options;
+        this.commandsPath = path.join(__dirname, '..', '..', 'commands', '*/*.js');
+        this.commands = new Collection();
     }
 
-    async loadAll() {
-        console.log('[CommandHandler] Iniciando carregamento de comandos...');
+    // ALTERADO: Renomeado de loadAll para loadCommandFiles
+    // Esta função APENAS carrega os ficheiros para a coleção
+    loadCommandFiles() {
+        console.log('[CommandHandler] Iniciando carregamento de arquivos de comando...'.yellow);
         try {
-            await this.loadCommandFiles();
+            const commandFiles = glob.sync(this.commandsPath);
+            console.log(`[CommandHandler] Encontrados ${commandFiles.length} arquivos de comando.`);
+
+            for (const file of commandFiles) {
+                try {
+                    // Ignora ficheiros template (lógica mantida)
+                    if (!file.includes('!')) {
+                        // console.log(`[CommandHandler] Processando arquivo: ${file}`); // Log opcional
+                        delete require.cache[require.resolve(file)];
+                        const command = require(file);
+
+                        if (!command.name || typeof command.execute !== 'function') {
+                            console.warn(`[AVISO][CommandHandler] Comando ${file} inválido. Pulando.`);
+                            continue;
+                        }
+
+                        this.commands.set(command.name, command);
+
+                        // Prepara dados para Slash Command (lógica mantida)
+                        if (!command.data) {
+                            command.data = new SlashCommandBuilder()
+                                .setName(command.name)
+                                .setDescription(command.description || 'Sem descrição');
+                            // Adicionar lógica de 'options' aqui se necessário
+                        }
+                        if (!command.data.name) command.data.setName(command.name);
+                        if (!command.data.description) command.data.setDescription(command.description || 'Sem descrição');
+
+                        // console.log(`[CommandHandler] Comando ${command.name} carregado.`); // Log opcional
+                    }
+                } catch (err) {
+                    console.error(`[ERRO][CommandHandler] Falha ao carregar ${file}:`, err);
+                    if(this.API.client?.emit) this.API.client.emit('error', err); // Emite erro
+                }
+            }
+            // Disponibiliza a coleção no client principal
+            this.client.commands = this.commands;
             console.log(`[CommandHandler] ${this.commands.size} comandos carregados na Collection.`);
 
-            await this.registerSlashCommands();
-            console.log(`[CommandHandler] Registro de Slash Commands iniciado.`);
-
         } catch (error) {
-            console.error('[ERRO][CommandHandler] Falha no processo loadAll:', error);
+            console.error('[ERRO][CommandHandler] Falha no processo loadCommandFiles:', error);
+             if(this.API.client?.emit) this.API.client.emit('error', error); // Emite erro
         }
     }
 
-    async loadCommandFiles() {
-        const commandFiles = glob.sync(this.commandsPath);
-        console.log(`[CommandHandler] Encontrados ${commandFiles.length} arquivos de comando.`);
-
-        for (const file of commandFiles) {
-             try {
-                if (!file.includes('!')) { // Ignora arquivos template
-                    console.log(`[CommandHandler] Processando arquivo: ${file}`);
-                    delete require.cache[require.resolve(file)];
-                    const command = require(file);
-
-                    if (!command.name || typeof command.execute !== 'function') {
-                        console.warn(`[AVISO][CommandHandler] Comando ${file} inválido. Pulando.`);
-                        continue;
-                    }
-
-                    // Adiciona à coleção interna
-                    this.commands.set(command.name, command);
-
-                    // Prepara dados para Slash Command se não existirem
-                    if (!command.data) {
-                        command.data = new SlashCommandBuilder()
-                            .setName(command.name)
-                            .setDescription(command.description || 'Sem descrição');
-                         // Adicionar lógica de 'options' aqui, se necessário, baseada na estrutura do comando
-                    }
-                    // Garante nome e descrição
-                     if (!command.data.name) command.data.setName(command.name);
-                     if (!command.data.description) command.data.setDescription(command.description || 'Sem descrição');
-
-                    console.log(`[CommandHandler] Comando ${command.name} carregado.`);
-                }
-            } catch (err) {
-                console.error(`[ERRO][CommandHandler] Falha ao carregar ${file}:`, err);
-            }
-        }
-        // Disponibiliza a coleção no client principal também (opcional, mas útil)
-        this.client.commands = this.commands;
-    }
-
-     // Extrai a lógica de obter os JSONs para registro
+     // Mantém a função _getCommandJsonsForRegistration como estava
      _getCommandJsonsForRegistration() {
          const globalCommandsJson = [];
-         const serverCommandsJson = []; // Comandos específicos de guilda (STAFF)
-
+         const serverCommandsJson = [];
          for (const command of this.commands.values()) {
-            if (!command.disabled && command.data) { // Verifica se tem 'data' (para slash) e não está desabilitado
-                 // Lógica de categoria (simplificada, ajuste conforme sua necessidade)
+            if (!command.disabled && command.data) {
                  let isStaffCommand = (command.category == 'none' && !command.companytype) || command.category === 'STAFF';
-
                  if (isStaffCommand) {
                      serverCommandsJson.push(command.data.toJSON());
                  } else {
@@ -91,31 +85,53 @@ class CommandHandler {
      }
 
 
+    // Esta função AGORA SÓ regista os comandos, não carrega ficheiros
     async registerSlashCommands() {
-        console.log('[CommandHandler] Tentando registrar/atualizar Slash Commands...');
-        const rest = new REST({ version: '10' }).setToken(this.client.token); // Usa o token do client
-        const clientId = this.options.app.id; // Usa o ID das options
+         // Verifica se já temos comandos carregados
+         if (this.commands.size === 0) {
+              console.warn("[CommandHandler] Nenhum comando carregado na memória para registar.".yellow);
+              // Tentar carregar ficheiros agora? Ou assumir que loadCommandFiles já correu?
+              // Vamos assumir que loadCommandFiles já correu.
+              // Se this.commands estiver vazio, _getCommandJsons... retornará arrays vazios, o que é seguro.
+         }
+
+        console.log('[CommandHandler] Tentando registrar/atualizar Slash Commands...'.cyan);
+        // Verifica se o token e o ID estão disponíveis (devem estar se o cliente estiver pronto)
+        if (!this.client.token || !this.options.app?.id) {
+             console.error("[ERRO][CommandHandler] Token ou Client ID não disponíveis para registar comandos!".red);
+             return;
+        }
+        const rest = new REST({ version: '10' }).setToken(this.client.token);
+        const clientId = this.options.app.id;
+        const guildId = '1153704546351190158'; // Guilda de Staff
 
         try {
             const { globalCommandsJson, serverCommandsJson } = this._getCommandJsonsForRegistration();
 
-            // --- Registro Global ---
-            try {
-                console.log(`[CommandHandler] Iniciando registro de ${globalCommandsJson.length} comandos globais (Client ID: ${clientId}).`);
-                const globalData = await rest.put(
-                    Routes.applicationCommands(clientId),
-                    { body: globalCommandsJson },
-                );
-                console.log(`[CommandHandler] ${globalData.length} comandos globais registrados/atualizados.`);
-            } catch (error) {
-                 console.error('[ERRO][CommandHandler] Falha ao registrar comandos GLOBAIS:', error);
+            // --- Registo Global ---
+            if (globalCommandsJson.length > 0) {
+                 try {
+                     console.log(`[CommandHandler] Iniciando registo de ${globalCommandsJson.length} comandos globais (Client ID: ${clientId}).`);
+                     const globalData = await rest.put(
+                         Routes.applicationCommands(clientId),
+                         { body: globalCommandsJson },
+                     );
+                     console.log(`[CommandHandler] ${globalData.length} comandos globais registrados/atualizados.`);
+                 } catch (error) {
+                      console.error('[ERRO][CommandHandler] Falha ao registrar comandos GLOBAIS:', error);
+                      // Não parar tudo, tentar registar os de guilda
+                 }
+            } else {
+                 console.log("[CommandHandler] Nenhum comando global para registar.");
+                 // Opcional: Limpar comandos globais antigos? (CUIDADO)
+                 // await rest.put(Routes.applicationCommands(clientId), { body: [] });
             }
 
-            // --- Registro Específico da Guilda (STAFF) ---
-            const guildId = '1153704546351190158'; // Mantenha ou torne configurável
+
+            // --- Registo Específico da Guilda (STAFF) ---
              if (serverCommandsJson.length > 0) {
                  try {
-                     console.log(`[CommandHandler] Iniciando registro de ${serverCommandsJson.length} comandos no servidor ${guildId}.`);
+                     console.log(`[CommandHandler] Iniciando registo de ${serverCommandsJson.length} comandos no servidor ${guildId}.`);
                      const guildData = await rest.put(
                          Routes.applicationGuildCommands(clientId, guildId),
                          { body: serverCommandsJson },
@@ -126,14 +142,15 @@ class CommandHandler {
                  }
             } else {
                  console.log(`[CommandHandler] Nenhum comando específico para registrar em ${guildId}.`);
-                 // Opcional: Limpar comandos antigos da guilda
+                 // Opcional: Limpar comandos antigos da guilda (CUIDADO)
                  // await rest.put(Routes.applicationGuildCommands(clientId, guildId), { body: [] });
             }
 
-             console.log('[CommandHandler] Registro de Slash Commands concluído.');
+             console.log('[CommandHandler] Registo de Slash Commands concluído.'.green);
 
         } catch (error) {
-            console.error('[ERRO][CommandHandler] Falha GERAL no registro de Slash Commands:', error);
+            console.error('[ERRO GERAL][CommandHandler] Falha no registo de Slash Commands:', error);
+            if(this.API.client?.emit) this.API.client.emit('error', error); // Emite erro
         }
     }
 }
