@@ -1,7 +1,7 @@
 // _classes/startup/Bootstrapper.js
 
 require('colors');
-const API = require('../api'); // Importa a API para aceder aos módulos necessários
+const API = require('../api/index'); // Importa a API para aceder aos módulos necessários
 
 class Bootstrapper {
     /**

@@ -19,17 +19,27 @@ module.exports = class ToddyClient extends Client {
         );
 
         console.log('[CLIENT CONSTRUCTOR] Chamando super()...');
-        super({
+
+        // 1. Mescla as 'options' (config) com as opções do Client (intents)
+        const mergedOptions = Object.assign({}, options, {
             allowedMentions: { parse: ['users', 'roles'], repliedUser: true },
             intents: myIntents
         });
+
+        // 2. Passa as opções mescladas para o super()
+        //    O super() irá automaticamente definir 'this.options' com este objeto mesclado.
+        super(mergedOptions);
+        
         console.log('[CLIENT CONSTRUCTOR] super() chamado.');
 
         console.log('[CLIENT CONSTRUCTOR] Validando token...');
-        this.validate(options); // Valida o token e armazena em this.token
+        // 3. Valida usando 'this.options' que agora contém tudo (incluindo o token)
+        this.validate(this.options); 
         console.log('[CLIENT CONSTRUCTOR] Token validado.');
 
-        this.options = options; // Armazena as opções
+        // 4. REMOVA a linha que sobrescreve 'this.options'
+        // this.options = options; // <-- LINHA REMOVIDA
+
         this.commands = new Collection(); // Inicializa a coleção de comandos
 
         console.log('[CLIENT CONSTRUCTOR] Criando DatabaseManager...');
@@ -39,6 +49,7 @@ module.exports = class ToddyClient extends Client {
 
         console.log('[CLIENT CONSTRUCTOR] Instanciando Handlers...');
         this.eventHandler = new EventHandler(this, API); // Instancia EventHandler
+        // O 'this.options' (definido pelo super) agora é passado para o handler
         this.commandHandler = new CommandHandler(this, API, this.options); // Instancia CommandHandler
         console.log('[CLIENT CONSTRUCTOR] Handlers instanciados.');
 
@@ -50,7 +61,7 @@ module.exports = class ToddyClient extends Client {
 
         console.log('[CLIENT CONSTRUCTOR] Construtor completo.'.green);
     }
-
+    
     validate(options) {
         let finalToken = options.app?.token;
         const shardingToken = process.env.DISCORD_TOKEN;
