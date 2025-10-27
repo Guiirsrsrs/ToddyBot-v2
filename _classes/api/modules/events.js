@@ -1,6 +1,6 @@
 // _classes/api/modules/events.js
 
-const API = require('../index'); // API centralizada (que agora contém API.db)
+// REMOVIDO: const API = require('../index'); // Causa dependência circular
 // REMOVIDO: Instância local não é mais necessária
 // const DatabaseManager = API.DatabaseManager; 
 const config = require('../../config'); // Config principal
@@ -27,6 +27,7 @@ const events = {
  * @returns {EmbedBuilder} Embed formatado.
  */
 events.getRaceEmbed = function(aposta) {
+    const API = require('../index'); // <--- CORREÇÃO (Lazy Load)
     const embed = new API.EmbedBuilder() // Usa o EmbedBuilder da API
         .setColor('#36393f')
         .setTitle('🐎 Evento | Corrida de Cavalos');
@@ -86,6 +87,8 @@ events.getRaceEmbed = function(aposta) {
 
 // Função auxiliar para editar a mensagem da corrida (lógica interna mantida)
 async function editRace(message) { // Renomeado parâmetro para 'message'
+    const API = require('../index'); // <--- CORREÇÃO (Lazy Load)
+    
     if (!message) {
          console.warn('[Events.Race] Tentativa de editar mensagem da corrida, mas a mensagem não foi encontrada (pode ter sido deletada).'.yellow);
          // Se a mensagem não existe, a corrida não pode continuar sendo exibida. Limpa o estado.
@@ -178,6 +181,7 @@ events.getConfig = function() { return config; };
  * @returns {Promise<Message|null>} A mensagem enviada ou null em caso de erro.
  */
 events.alert = async function(text) {
+    const API = require('../index'); // <--- CORREÇÃO (Lazy Load)
     const channelId = config.modules?.events?.channel;
     if (!channelId) {
         console.error("[ERRO][Events] ID do canal de eventos não configurado!");
@@ -224,6 +228,7 @@ events.alert = async function(text) {
 // --- Funções para Iniciar Eventos (Tesouro e Pato mantidos em memória) ---
 
 events.forceTreasure = async function(loc) {
+    const API = require('../index'); // <--- CORREÇÃO (Lazy Load)
     events.treasure.loc = loc || API.utils.random(1, 4); // Usa utils
     try {
         events.treasure.pos = await API.townExtension.getPosByTownNum(events.treasure.loc); // Usa townExtension atualizado
@@ -238,6 +243,7 @@ events.forceTreasure = async function(loc) {
 };
 
 events.forceDuck = async function(loc) {
+    const API = require('../index'); // <--- CORREÇÃO (Lazy Load)
     events.duck.loc = loc || API.utils.random(1, 4); // Usa utils
     try {
         events.duck.pos = await API.townExtension.getPosByTownNum(events.duck.loc); // Usa townExtension atualizado
@@ -256,6 +262,7 @@ events.forceDuck = async function(loc) {
  * Inicia o evento Corrida de Cavalos, salva no DB e inicia o loop de atualização.
  */
 events.forceRace = async function() {
+    const API = require('../index'); // <--- CORREÇÃO (Lazy Load)
     if (events.race.rodando) {
         console.warn("[Events.Race] Tentativa de iniciar corrida enquanto outra já está rodando.");
         return;
@@ -348,13 +355,15 @@ events.forceRace = async function() {
 // --- Função Load (Carrega estado da corrida ao iniciar) ---
 
 events.load = async function() {
+    const API = require('../index'); // <--- CORREÇÃO (Lazy Load)
+    
     console.log("[Events] Iniciando carregamento de estado e timers...".yellow);
     try {
         // Carrega estado da Corrida
         const filter = { _id: API.id }; // ID do bot
         const options = { projection: { events: 1 } };
         // ALTERADO: Usando API.db
-        const globalDoc = await API.db.findOne('globals', filter, options);
+        const globalDoc = await API.db.findOne('globals', filter, options); // <--- ESTA LINHA AGORA DEVE FUNCIONAR
 
         if (globalDoc?.events?.race && globalDoc.events.race.rodando) {
             const savedRace = globalDoc.events.race;
